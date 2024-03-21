@@ -3,7 +3,7 @@ use raylib::prelude::*;
 
 use crate::{
     gui::{def_gui, draw_gui},
-    rshigg::Gui,
+    rshigg::{Event, Gui},
     DIMS,
 };
 
@@ -35,11 +35,28 @@ pub fn normalize_coord(pos: Vec2) -> Vec2 {
     Vec2::new(pos.x / DIMS.x as f32, pos.y / DIMS.y as f32)
 }
 
-pub fn step(rl: &mut RaylibHandle, rlt: &mut RaylibThread, state: &mut State) {
+pub fn step(rl: &mut RaylibHandle, state: &mut State) {
     let mouse_pos = rl.get_mouse_position();
     let nmp = normalize_coord(Vec2::new(mouse_pos.x, mouse_pos.y));
     let mouse_pressed = rl.is_mouse_button_down(raylib::consts::MouseButton::MOUSE_LEFT_BUTTON);
-    state.gui.step(nmp, mouse_pressed);
+
+    let events = state.gui.step(nmp, mouse_pressed);
+    for event in events {
+        match event {
+            Event::ButtonPressed => {
+                println!("Button pressed!");
+            }
+            Event::ButtonReleased => {
+                println!("Button released!");
+            }
+            Event::SliderMoved => {
+                println!("Slider moved!");
+            }
+            Event::SliderReleased => {
+                println!("Slider released!");
+            }
+        }
+    }
 }
 
 pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {

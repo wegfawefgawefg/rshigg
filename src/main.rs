@@ -41,7 +41,7 @@ fn main() {
         while state.time_since_last_update > TIMESTEP {
             state.time_since_last_update -= TIMESTEP;
 
-            sketch::step(&mut rl, &mut rlt, &mut state);
+            sketch::step(&mut rl, &mut state);
         }
 
         let mut draw_handle = rl.begin_drawing(&rlt);
