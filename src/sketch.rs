@@ -49,11 +49,11 @@ pub fn step(rl: &mut RaylibHandle, state: &mut State) {
             Event::ButtonReleased => {
                 println!("Button released!");
             }
-            Event::SliderMoved => {
-                println!("Slider moved!");
+            Event::SliderMoved { value } => {
+                println!("Slider moved to {}", value);
             }
-            Event::SliderReleased => {
-                println!("Slider released!");
+            Event::SliderReleased { value } => {
+                println!("Slider released at {}", value);
             }
         }
     }

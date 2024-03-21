@@ -7,8 +7,8 @@ static ELEMENT_NEXT_ID: AtomicU32 = AtomicU32::new(0);
 pub enum Event {
     ButtonPressed,
     ButtonReleased,
-    SliderMoved,
-    SliderReleased,
+    SliderMoved { value: f32 },
+    SliderReleased { value: f32 },
 }
 
 pub trait Element {
@@ -122,7 +122,7 @@ impl Slider {
         let mut event: Option<Event> = None;
 
         if self.was_pressed && !mouse_pressed {
-            event = Some(Event::SliderReleased);
+            event = Some(Event::SliderReleased { value: self.value });
             self.was_pressed = false;
         }
 
@@ -161,7 +161,7 @@ impl Slider {
 
                 // only emit event if value changed
                 if self.value != old_value {
-                    event = Some(Event::SliderMoved);
+                    event = Some(Event::SliderMoved { value: self.value });
                 }
 
                 self.was_pressed = true;
