@@ -7,6 +7,7 @@ pub static ELEMENT_NEXT_ID: AtomicU32 = AtomicU32::new(0);
 #[derive(Clone, Copy, Debug)]
 pub struct TaggedEvent<T: Clone + Copy> {
     pub tag: T,
+    pub element_id: u32,
     pub event: Event,
 }
 

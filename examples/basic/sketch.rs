@@ -45,7 +45,9 @@ pub struct State {
 
 impl State {
     pub fn new() -> Self {
-        let (gui, test_elements) = def_gui();
+        let (mut gui, mut test_elements) = def_gui();
+        let drag_thumb = test_elements.drag_thumb;
+        reposition_test_elements(&mut test_elements, &mut gui, drag_thumb);
         Self {
             running: true,
             time_since_last_update: 0.0,
@@ -66,7 +68,44 @@ pub fn normalize_coord(pos: Vec2) -> Vec2 {
     Vec2::new(pos.x / DIMS.x as f32, pos.y / DIMS.y as f32)
 }
 
-pub fn reposition_test_elements(state: &mut State, new_pos: Vec2) {}
+pub fn reposition_test_elements(
+    test_elements: &mut TestElements,
+    gui: &mut Gui<Tag>,
+    thumb_id: u32,
+) {
+    let (tl, size) = if let Some(thumb) = gui.get_draggable(thumb_id) {
+        (thumb.position, thumb.size)
+    } else {
+        return;
+    };
+
+    let mut cursor = tl + Vec2::new(size.x, 0.0);
+    const DELTA: f32 = 0.1;
+
+    if let Some(mnmz_button) = gui.get_button_mut(test_elements.minimize_window_button) {
+        mnmz_button.position = cursor;
+        cursor.x += mnmz_button.size.x;
+    }
+    if let Some(close_button) = gui.get_button_mut(test_elements.close_window_button) {
+        close_button.position = cursor;
+    }
+
+    let mut cursor = tl + Vec2::new(0.0, size.y);
+    if let Some(button) = gui.get_button_mut(test_elements.potato_button) {
+        button.position = cursor;
+        cursor.y += DELTA;
+    }
+
+    if let Some(slider) = gui.get_slider_mut(test_elements.slider) {
+        slider.position = cursor;
+        cursor.y += DELTA;
+    }
+
+    if let Some(slider) = gui.get_vertical_slider_mut(test_elements.vertical_slider) {
+        slider.position = cursor;
+        cursor.y += DELTA;
+    }
+}
 
 pub fn handle_gui_events(state: &mut State, tagged_events: Vec<TaggedEvent<Tag>>) {
     for tagged_event in tagged_events {
@@ -85,7 +124,13 @@ pub fn handle_gui_events(state: &mut State, tagged_events: Vec<TaggedEvent<Tag>>
             }
             (Tag::MoveThumb, Event::DraggableMoved { new_pos }) => {
                 state.settings.draggable_pos = Some(new_pos);
-                reposition_test_elements(state, new_pos);
+                let thumb_id = tagged_event.element_id;
+                // reposition_test_elements(state, thumb_id);
+                if let Some(thumb) = state.gui.get_draggable(thumb_id) {
+                    let mut pos = new_pos;
+                    pos.y += thumb.size.y;
+                    reposition_test_elements(&mut state.test_elements, &mut state.gui, thumb_id);
+                }
             }
             _ => {}
         }

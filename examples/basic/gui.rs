@@ -8,19 +8,26 @@ use rshigg::{Draggable, VerticalSlider};
 
 use crate::{
     rshigg::{Button, Gui, Slider},
+    sketch::reposition_test_elements,
     DIMS,
 };
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Tag {
+    CloseMenu,
+    MinimizeMenu,
     SelectionPotato,
     SelectionHotChip,
     SetTemperature,
     SetHeight,
     MoveThumb,
+    OpenMenu,
 }
 
 pub struct TestElements {
+    pub drag_thumb: u32,
+    pub close_window_button: u32,
+    pub minimize_window_button: u32,
     pub potato_button: u32,
     pub hot_chip_button: u32,
     pub slider: u32,
@@ -30,6 +37,9 @@ pub struct TestElements {
 impl TestElements {
     pub fn new() -> Self {
         Self {
+            drag_thumb: 0,
+            close_window_button: 0,
+            minimize_window_button: 0,
             potato_button: 0,
             hot_chip_button: 0,
             slider: 0,
@@ -100,14 +110,49 @@ pub fn def_gui() -> (Gui<Tag>, TestElements) {
     gui.add_vertical_slider(vertical_slider, Tag::SetHeight);
 
     // draggable
-    cursor.y += 0.2;
+    cursor = Vec2::new(0.2, 0.2);
+    let aspect_ratio = DIMS.x as f32 / DIMS.y as f32;
+    let d_width = 0.2;
     let draggable = Draggable::new(
         cursor,
-        Vec2::new(0.1, 0.1),
+        Vec2::new(0.2, 0.05),
         default_color,
         Some("Thumb".to_string()),
     );
+    test_elements.drag_thumb = draggable.id;
     gui.add_draggable(draggable, Tag::MoveThumb);
+
+    // minimize window button
+    // to the right of the draggable
+    cursor.x += 0.2;
+    let button = Button::new(
+        cursor,
+        Vec2::new(0.05, 0.05),
+        default_color,
+        Some("-".to_string()),
+    );
+    test_elements.minimize_window_button = button.id;
+    gui.add_button(button, Tag::MinimizeMenu);
+
+    // close window button
+    // to the right of the minimize window button
+    cursor.x += 0.05;
+    let button = Button::new(
+        cursor,
+        Vec2::new(0.05, 0.05),
+        default_color,
+        Some("X".to_string()),
+    );
+    test_elements.close_window_button = button.id;
+    gui.add_button(button, Tag::CloseMenu);
+
+    let button = Button::new(
+        Vec2::new(0.0, 0.9),
+        Vec2::new(0.1, 0.1),
+        default_color,
+        Some("Menu".to_string()),
+    );
+    gui.add_button(button, Tag::OpenMenu);
 
     (gui, test_elements)
 }
@@ -381,98 +426,64 @@ pub fn draw_draggable(
     let min_dim = ad.x.min(ad.y);
     let offset = Vec2::new(1.0, 1.0);
 
-    if !draggable.hovered {
-        // shadow
-        d.draw_rectangle(
-            ap.x as i32,
-            ap.y as i32,
-            (ad.x + offset.x) as i32,
-            (ad.y + offset.y) as i32,
-            raylib::color::Color::BLACK,
-        );
+    // shadow
+    d.draw_rectangle(
+        ap.x as i32,
+        ap.y as i32,
+        (ad.x + offset.x) as i32,
+        (ad.y + offset.y) as i32,
+        raylib::color::Color::BLACK,
+    );
 
-        // highlight
-        d.draw_rectangle(
-            ap.x as i32,
-            ap.y as i32,
-            ad.x as i32,
-            ad.y as i32,
-            raylib::color::Color::WHITE,
-        );
+    // highlight
+    d.draw_rectangle(
+        ap.x as i32,
+        ap.y as i32,
+        ad.x as i32,
+        ad.y as i32,
+        raylib::color::Color::WHITE,
+    );
 
-        // draggable
-        d.draw_rectangle(
-            (ap.x + offset.x) as i32,
-            (ap.y + offset.y) as i32,
-            (ad.x - offset.x) as i32,
-            (ad.y - offset.y) as i32,
-            draggable.color,
-        );
+    // draggable
+    d.draw_rectangle(
+        (ap.x + offset.x) as i32,
+        (ap.y + offset.y) as i32,
+        (ad.x - offset.x) as i32,
+        (ad.y - offset.y) as i32,
+        draggable.color,
+    );
 
-        // draw 2 lines to indicate the draggable is grabbable
-        // draw one line 30% from the top, and one 30% from the bottom
-        let line_start_x = ad.x * 0.3 + ap.x;
-        let line_end_x = ad.x * 0.7 + ap.x;
+    // draw 2 lines to indicate the draggable is grabbable
+    // draw one line 30% from the top, and one 30% from the bottom
+    let line_start_x = ad.x * 0.3 + ap.x;
+    let line_end_x = ad.x * 0.7 + ap.x;
 
-        let upper_line_height = ad.y * 0.3 + ap.y;
-        let lower_line_height = ad.y * 0.7 + ap.y;
+    let upper_line_height = ad.y * 0.3 + ap.y;
+    let lower_line_height = ad.y * 0.7 + ap.y;
 
-        let line_thickness = 2;
+    let line_thickness = 2;
 
-        let color_mod = 0.3;
-        let line_color = raylib::color::Color::new(
-            (draggable.color.r as f32 * color_mod) as u8,
-            (draggable.color.g as f32 * color_mod) as u8,
-            (draggable.color.b as f32 * color_mod) as u8,
-            draggable.color.a,
-        );
-        d.draw_line(
-            line_start_x as i32,
-            upper_line_height as i32,
-            line_end_x as i32,
-            upper_line_height as i32,
-            line_color,
-        );
-        d.draw_line(
-            line_start_x as i32,
-            lower_line_height as i32,
-            line_end_x as i32,
-            lower_line_height as i32,
-            line_color,
-        );
-    } else {
-        // shadow
-        d.draw_rectangle(
-            ap.x as i32,
-            ap.y as i32,
-            (ad.x + offset.x) as i32,
-            (ad.y + offset.y) as i32,
-            raylib::color::Color::BLACK,
-        );
-
-        // highlight
-        d.draw_rectangle(
-            ap.x as i32,
-            ap.y as i32,
-            ad.x as i32,
-            ad.y as i32,
-            raylib::color::Color::WHITE,
-        );
-
-        // button
-        d.draw_rectangle(
-            (ap.x + offset.x) as i32,
-            (ap.y + offset.y) as i32,
-            (ad.x - offset.x) as i32,
-            (ad.y - offset.y) as i32,
-            raylib::color::Color::new(
-                (draggable.color.r as f32 * 0.65) as u8,
-                (draggable.color.g as f32 * 0.65) as u8,
-                (draggable.color.b as f32 * 0.65) as u8,
-                draggable.color.a,
-            ),
-        );
-    }
+    let color_mod = 0.3;
+    let line_color = raylib::color::Color::new(
+        (draggable.color.r as f32 * color_mod) as u8,
+        (draggable.color.g as f32 * color_mod) as u8,
+        (draggable.color.b as f32 * color_mod) as u8,
+        draggable.color.a,
+    );
+    d.draw_line(
+        line_start_x as i32,
+        upper_line_height as i32,
+        line_end_x as i32,
+        upper_line_height as i32,
+        line_color,
+    );
+    d.draw_line(
+        line_start_x as i32,
+        lower_line_height as i32,
+        line_end_x as i32,
+        lower_line_height as i32,
+        line_color,
+    );
 }
 
 /*

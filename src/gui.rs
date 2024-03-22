@@ -1,7 +1,7 @@
 use glam::Vec2;
 use std::collections::HashMap;
 
-use crate::{Draggable, VerticalSlider};
+use crate::{Draggable, Label, VerticalSlider};
 
 use super::{Button, Slider, TaggedEvent};
 
@@ -11,6 +11,7 @@ pub struct Gui<T: Clone + Copy> {
     pub sliders: Vec<Slider>,
     pub vertical_sliders: Vec<VerticalSlider>,
     pub draggables: Vec<Draggable>,
+    pub labels: Vec<Label>,
 }
 
 impl<T: Clone + Copy> Gui<T> {
@@ -21,6 +22,7 @@ impl<T: Clone + Copy> Gui<T> {
             sliders: Vec::new(),
             vertical_sliders: Vec::new(),
             draggables: Vec::new(),
+            labels: Vec::new(),
         }
     }
 
@@ -45,6 +47,10 @@ impl<T: Clone + Copy> Gui<T> {
         self.draggables.push(draggable);
     }
 
+    pub fn add_label(&mut self, label: Label) {
+        self.labels.push(label);
+    }
+
     //// REMOVE ELEMENTS
     pub fn remove_button(&mut self, id: u32) {
         self.buttons.retain(|button| button.id != id);
@@ -67,6 +73,10 @@ impl<T: Clone + Copy> Gui<T> {
         self.el_to_tag_map.remove(&id);
     }
 
+    pub fn remove_label(&mut self, id: u32) {
+        self.labels.retain(|label| label.id != id);
+    }
+
     //// GET ELEMENTS
     pub fn get_button(&self, id: u32) -> Option<&Button> {
         self.buttons.iter().find(|button| button.id == id)
@@ -84,6 +94,10 @@ impl<T: Clone + Copy> Gui<T> {
 
     pub fn get_draggable(&self, id: u32) -> Option<&Draggable> {
         self.draggables.iter().find(|draggable| draggable.id == id)
+    }
+
+    pub fn get_label(&self, id: u32) -> Option<&Label> {
+        self.labels.iter().find(|label| label.id == id)
     }
 
     //// GET ELEMENTS MUT
@@ -107,6 +121,10 @@ impl<T: Clone + Copy> Gui<T> {
             .find(|draggable| draggable.id == id)
     }
 
+    pub fn get_label_mut(&mut self, id: u32) -> Option<&mut Label> {
+        self.labels.iter_mut().find(|label| label.id == id)
+    }
+
     ///Step the gui, and all elements within.
     /// Mouse position should ideally be normalized between [0.0, 1.0].
     /// Values outside the range [0.0, 1.0] can be treated as outside the gui rect.
@@ -116,28 +134,44 @@ impl<T: Clone + Copy> Gui<T> {
         for button in self.buttons.iter_mut() {
             if let Some(event) = button.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&button.id) {
-                    tagged_events.push(TaggedEvent { tag: *tag, event });
+                    tagged_events.push(TaggedEvent {
+                        tag: *tag,
+                        element_id: button.id,
+                        event,
+                    });
                 }
             }
         }
         for slider in self.sliders.iter_mut() {
             if let Some(event) = slider.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&slider.id) {
-                    tagged_events.push(TaggedEvent { tag: *tag, event });
+                    tagged_events.push(TaggedEvent {
+                        tag: *tag,
+                        element_id: slider.id,
+                        event,
+                    });
                 }
             }
         }
         for vertical_slider in self.vertical_sliders.iter_mut() {
             if let Some(event) = vertical_slider.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&vertical_slider.id) {
-                    tagged_events.push(TaggedEvent { tag: *tag, event });
+                    tagged_events.push(TaggedEvent {
+                        tag: *tag,
+                        element_id: vertical_slider.id,
+                        event,
+                    });
                 }
             }
         }
         for draggable in self.draggables.iter_mut() {
             if let Some(event) = draggable.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&draggable.id) {
-                    tagged_events.push(TaggedEvent { tag: *tag, event });
+                    tagged_events.push(TaggedEvent {
+                        tag: *tag,
+                        element_id: draggable.id,
+                        event,
+                    });
                 }
             }
         }
