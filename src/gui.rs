@@ -1,12 +1,15 @@
 use glam::Vec2;
 use std::collections::HashMap;
 
+use crate::VerticalSlider;
+
 use super::{Button, Slider, TaggedEvent};
 
 pub struct Gui<T: Clone + Copy> {
     pub el_to_tag_map: HashMap<u32, T>,
     pub buttons: Vec<Button>,
     pub sliders: Vec<Slider>,
+    pub vertical_sliders: Vec<VerticalSlider>,
 }
 
 impl<T: Clone + Copy> Gui<T> {
@@ -15,6 +18,7 @@ impl<T: Clone + Copy> Gui<T> {
             el_to_tag_map: HashMap::new(),
             buttons: Vec::new(),
             sliders: Vec::new(),
+            vertical_sliders: Vec::new(),
         }
     }
 
@@ -29,6 +33,11 @@ impl<T: Clone + Copy> Gui<T> {
         self.sliders.push(slider);
     }
 
+    pub fn add_vertical_slider(&mut self, vertical_slider: VerticalSlider, tag: T) {
+        self.el_to_tag_map.insert(vertical_slider.id, tag);
+        self.vertical_sliders.push(vertical_slider);
+    }
+
     //// REMOVE ELEMENTS
     pub fn remove_button(&mut self, id: u32) {
         self.buttons.retain(|button| button.id != id);
@@ -37,6 +46,12 @@ impl<T: Clone + Copy> Gui<T> {
 
     pub fn remove_slider(&mut self, id: u32) {
         self.sliders.retain(|slider| slider.id != id);
+        self.el_to_tag_map.remove(&id);
+    }
+
+    pub fn remove_vertical_slider(&mut self, id: u32) {
+        self.vertical_sliders
+            .retain(|vertical_slider| vertical_slider.id != id);
         self.el_to_tag_map.remove(&id);
     }
 
@@ -56,6 +71,13 @@ impl<T: Clone + Copy> Gui<T> {
         for slider in self.sliders.iter_mut() {
             if let Some(event) = slider.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&slider.id) {
+                    tagged_events.push(TaggedEvent { tag: *tag, event });
+                }
+            }
+        }
+        for vertical_slider in self.vertical_sliders.iter_mut() {
+            if let Some(event) = vertical_slider.step(mouse_position, mouse_pressed) {
+                if let Some(tag) = self.el_to_tag_map.get(&vertical_slider.id) {
                     tagged_events.push(TaggedEvent { tag: *tag, event });
                 }
             }

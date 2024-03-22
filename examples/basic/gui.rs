@@ -4,6 +4,7 @@ use raylib::{
     drawing::{RaylibDraw, RaylibDrawHandle, RaylibTextureMode},
     text::measure_text_ex,
 };
+use rshigg::VerticalSlider;
 
 use crate::{
     rshigg::{Button, Gui, Slider},
@@ -15,6 +16,7 @@ pub enum Tag {
     SelectionPotato,
     SelectionHotChip,
     SetTemperature,
+    SetHeight,
 }
 
 pub fn def_gui() -> Gui<Tag> {
@@ -56,6 +58,22 @@ pub fn def_gui() -> Gui<Tag> {
     );
     gui.add_slider(slider, Tag::SetTemperature);
 
+    // vertical slider now
+    cursor.y += 0.2;
+    let vertical_slider = VerticalSlider::new(
+        cursor,
+        Vec2::new(0.05, 0.2),
+        0.05,
+        0.0,
+        100.0,
+        1.0,
+        50.0,
+        0.05,
+        default_color,
+        Some("Height".to_string()),
+    );
+    gui.add_vertical_slider(vertical_slider, Tag::SetHeight);
+
     gui
 }
 
@@ -66,6 +84,9 @@ pub fn draw_gui(gui: &Gui<Tag>, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
     }
     for slider in &gui.sliders {
         draw_slider(d, slider, resolution);
+    }
+    for vertical_slider in &gui.vertical_sliders {
+        draw_vertical_slider(d, vertical_slider, resolution);
     }
 }
 
@@ -213,6 +234,69 @@ pub fn draw_slider(d: &mut RaylibTextureMode<RaylibDrawHandle>, slider: &Slider,
 
     let thumb_position = Vec2::new(absolute_thumb_x - half_thumb_width, absolute_position.y);
     let absolute_thumb_dimensions = Vec2::new(absolute_thumb_width, absolute_dimensions.y);
+
+    let tp = thumb_position;
+    let td = absolute_thumb_dimensions;
+    let offset = Vec2::new(1.0, 1.0);
+
+    // shadow
+    d.draw_rectangle(
+        tp.x as i32,
+        tp.y as i32,
+        (td.x + offset.x) as i32,
+        (td.y + offset.y) as i32,
+        raylib::color::Color::BLACK,
+    );
+
+    // highlight
+    d.draw_rectangle(
+        tp.x as i32,
+        tp.y as i32,
+        td.x as i32,
+        td.y as i32,
+        raylib::color::Color::WHITE,
+    );
+
+    // slider center
+    d.draw_rectangle(
+        (tp.x + offset.x) as i32,
+        (tp.y + offset.y) as i32,
+        (td.x - offset.x) as i32,
+        (td.y - offset.y) as i32,
+        slider.color,
+    );
+}
+
+pub fn draw_vertical_slider(
+    d: &mut RaylibTextureMode<RaylibDrawHandle>,
+    slider: &VerticalSlider,
+    resolution: Vec2,
+) {
+    let absolute_position = resolution * slider.position;
+    let absolute_dimensions = resolution * slider.size;
+
+    let ap = absolute_position;
+    let ad = absolute_dimensions;
+
+    // draw body
+    d.draw_rectangle(
+        ap.x as i32,
+        ap.y as i32,
+        ad.x as i32,
+        ad.y as i32,
+        raylib::color::Color::new(100, 100, 100, 255),
+    );
+
+    // draw body
+    let value_fraction = (slider.value - slider.minimum) / (slider.maximum - slider.minimum); // range [0.0 , 1.0]
+    let rel_position_y = value_fraction * slider.size.y; // [0.0, slider_rel_width]
+    let absolute_thumb_y = absolute_position.y + rel_position_y * resolution.y;
+
+    let absolute_thumb_height = resolution.y * slider.thumb_height;
+    let half_thumb_height = absolute_thumb_height / 2.0;
+
+    let thumb_position = Vec2::new(absolute_position.x, absolute_thumb_y - half_thumb_height);
+    let absolute_thumb_dimensions = Vec2::new(absolute_dimensions.x, absolute_thumb_height);
 
     let tp = thumb_position;
     let td = absolute_thumb_dimensions;

@@ -16,6 +16,7 @@ pub struct Settings {
     pub steak: bool,
 
     pub temperature: f32,
+    pub height: f32,
 }
 
 impl Settings {
@@ -26,6 +27,7 @@ impl Settings {
             ice_cream: false,
             steak: false,
             temperature: 50.0,
+            height: 50.0,
         }
     }
 }
@@ -68,6 +70,10 @@ pub fn handle_gui_events(state: &mut State, tagged_events: Vec<TaggedEvent<Tag>>
             (Tag::SetTemperature, Event::SliderMoved { value }) => {
                 state.settings.temperature = value;
                 println!("Temp set to {}", value);
+            }
+            (Tag::SetHeight, Event::SliderMoved { value }) => {
+                state.settings.height = value;
+                println!("Height set to {}", value);
             }
             _ => {}
         }
@@ -114,6 +120,7 @@ pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
     let list_items = vec![
         format!("Potato: {}", state.settings.potato),
         format!("Temperature: {}", state.settings.temperature),
+        format!("Height: {}", state.settings.height),
     ];
     render_list(d, &list_items, Vec2::new(12.0, 48.0), 24, Color::WHITE);
 }
