@@ -16,6 +16,9 @@ pub enum Event {
     ButtonReleased,
     SliderMoved { value: f32 },
     SliderReleased { value: f32 },
+    DraggablePressed,
+    DraggableReleased { new_pos: Vec2 },
+    DraggableMoved { new_pos: Vec2 },
 }
 
 pub trait Element {

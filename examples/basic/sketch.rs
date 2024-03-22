@@ -2,7 +2,7 @@ use glam::Vec2;
 use raylib::prelude::*;
 
 use crate::{
-    gui::{def_gui, draw_gui, Tag},
+    gui::{def_gui, draw_gui, Tag, TestElements},
     rshigg::{Event, Gui, TaggedEvent},
     DIMS,
 };
@@ -17,6 +17,8 @@ pub struct Settings {
 
     pub temperature: f32,
     pub height: f32,
+
+    pub draggable_pos: Option<Vec2>,
 }
 
 impl Settings {
@@ -28,6 +30,7 @@ impl Settings {
             steak: false,
             temperature: 50.0,
             height: 50.0,
+            draggable_pos: Option::None,
         }
     }
 }
@@ -37,15 +40,18 @@ pub struct State {
     pub time_since_last_update: f32,
     pub gui: Gui<Tag>,
     pub settings: Settings,
+    pub test_elements: TestElements,
 }
 
 impl State {
     pub fn new() -> Self {
+        let (gui, test_elements) = def_gui();
         Self {
             running: true,
             time_since_last_update: 0.0,
-            gui: def_gui(),
+            gui,
             settings: Settings::new(),
+            test_elements,
         }
     }
 }
@@ -59,6 +65,8 @@ pub fn process_events_and_input(rl: &mut RaylibHandle, state: &mut State) {
 pub fn normalize_coord(pos: Vec2) -> Vec2 {
     Vec2::new(pos.x / DIMS.x as f32, pos.y / DIMS.y as f32)
 }
+
+pub fn reposition_test_elements(state: &mut State, new_pos: Vec2) {}
 
 pub fn handle_gui_events(state: &mut State, tagged_events: Vec<TaggedEvent<Tag>>) {
     for tagged_event in tagged_events {
@@ -74,6 +82,10 @@ pub fn handle_gui_events(state: &mut State, tagged_events: Vec<TaggedEvent<Tag>>
             (Tag::SetHeight, Event::SliderMoved { value }) => {
                 state.settings.height = value;
                 println!("Height set to {}", value);
+            }
+            (Tag::MoveThumb, Event::DraggableMoved { new_pos }) => {
+                state.settings.draggable_pos = Some(new_pos);
+                reposition_test_elements(state, new_pos);
             }
             _ => {}
         }
@@ -121,6 +133,7 @@ pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
         format!("Potato: {}", state.settings.potato),
         format!("Temperature: {}", state.settings.temperature),
         format!("Height: {}", state.settings.height),
+        format!("Draggable Pos: {:?}", state.settings.draggable_pos),
     ];
     render_list(d, &list_items, Vec2::new(12.0, 48.0), 24, Color::WHITE);
 }

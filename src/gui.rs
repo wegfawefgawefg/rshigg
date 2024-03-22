@@ -1,7 +1,7 @@
 use glam::Vec2;
 use std::collections::HashMap;
 
-use crate::VerticalSlider;
+use crate::{Draggable, VerticalSlider};
 
 use super::{Button, Slider, TaggedEvent};
 
@@ -10,6 +10,7 @@ pub struct Gui<T: Clone + Copy> {
     pub buttons: Vec<Button>,
     pub sliders: Vec<Slider>,
     pub vertical_sliders: Vec<VerticalSlider>,
+    pub draggables: Vec<Draggable>,
 }
 
 impl<T: Clone + Copy> Gui<T> {
@@ -19,6 +20,7 @@ impl<T: Clone + Copy> Gui<T> {
             buttons: Vec::new(),
             sliders: Vec::new(),
             vertical_sliders: Vec::new(),
+            draggables: Vec::new(),
         }
     }
 
@@ -38,6 +40,11 @@ impl<T: Clone + Copy> Gui<T> {
         self.vertical_sliders.push(vertical_slider);
     }
 
+    pub fn add_draggable(&mut self, draggable: Draggable, tag: T) {
+        self.el_to_tag_map.insert(draggable.id, tag);
+        self.draggables.push(draggable);
+    }
+
     //// REMOVE ELEMENTS
     pub fn remove_button(&mut self, id: u32) {
         self.buttons.retain(|button| button.id != id);
@@ -53,6 +60,51 @@ impl<T: Clone + Copy> Gui<T> {
         self.vertical_sliders
             .retain(|vertical_slider| vertical_slider.id != id);
         self.el_to_tag_map.remove(&id);
+    }
+
+    pub fn remove_draggable(&mut self, id: u32) {
+        self.draggables.retain(|draggable| draggable.id != id);
+        self.el_to_tag_map.remove(&id);
+    }
+
+    //// GET ELEMENTS
+    pub fn get_button(&self, id: u32) -> Option<&Button> {
+        self.buttons.iter().find(|button| button.id == id)
+    }
+
+    pub fn get_slider(&self, id: u32) -> Option<&Slider> {
+        self.sliders.iter().find(|slider| slider.id == id)
+    }
+
+    pub fn get_vertical_slider(&self, id: u32) -> Option<&VerticalSlider> {
+        self.vertical_sliders
+            .iter()
+            .find(|vertical_slider| vertical_slider.id == id)
+    }
+
+    pub fn get_draggable(&self, id: u32) -> Option<&Draggable> {
+        self.draggables.iter().find(|draggable| draggable.id == id)
+    }
+
+    //// GET ELEMENTS MUT
+    pub fn get_button_mut(&mut self, id: u32) -> Option<&mut Button> {
+        self.buttons.iter_mut().find(|button| button.id == id)
+    }
+
+    pub fn get_slider_mut(&mut self, id: u32) -> Option<&mut Slider> {
+        self.sliders.iter_mut().find(|slider| slider.id == id)
+    }
+
+    pub fn get_vertical_slider_mut(&mut self, id: u32) -> Option<&mut VerticalSlider> {
+        self.vertical_sliders
+            .iter_mut()
+            .find(|vertical_slider| vertical_slider.id == id)
+    }
+
+    pub fn get_draggable_mut(&mut self, id: u32) -> Option<&mut Draggable> {
+        self.draggables
+            .iter_mut()
+            .find(|draggable| draggable.id == id)
     }
 
     ///Step the gui, and all elements within.
@@ -78,6 +130,13 @@ impl<T: Clone + Copy> Gui<T> {
         for vertical_slider in self.vertical_sliders.iter_mut() {
             if let Some(event) = vertical_slider.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&vertical_slider.id) {
+                    tagged_events.push(TaggedEvent { tag: *tag, event });
+                }
+            }
+        }
+        for draggable in self.draggables.iter_mut() {
+            if let Some(event) = draggable.step(mouse_position, mouse_pressed) {
+                if let Some(tag) = self.el_to_tag_map.get(&draggable.id) {
                     tagged_events.push(TaggedEvent { tag: *tag, event });
                 }
             }

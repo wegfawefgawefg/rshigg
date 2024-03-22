@@ -4,7 +4,7 @@ use raylib::{
     drawing::{RaylibDraw, RaylibDrawHandle, RaylibTextureMode},
     text::measure_text_ex,
 };
-use rshigg::VerticalSlider;
+use rshigg::{Draggable, VerticalSlider};
 
 use crate::{
     rshigg::{Button, Gui, Slider},
@@ -17,9 +17,30 @@ pub enum Tag {
     SelectionHotChip,
     SetTemperature,
     SetHeight,
+    MoveThumb,
 }
 
-pub fn def_gui() -> Gui<Tag> {
+pub struct TestElements {
+    pub potato_button: u32,
+    pub hot_chip_button: u32,
+    pub slider: u32,
+    pub vertical_slider: u32,
+}
+
+impl TestElements {
+    pub fn new() -> Self {
+        Self {
+            potato_button: 0,
+            hot_chip_button: 0,
+            slider: 0,
+            vertical_slider: 0,
+        }
+    }
+}
+
+pub fn def_gui() -> (Gui<Tag>, TestElements) {
+    let mut test_elements = TestElements::new();
+
     let default_color = Color::new(200, 200, 200, 255);
 
     let mut gui = Gui::new();
@@ -31,6 +52,7 @@ pub fn def_gui() -> Gui<Tag> {
         default_color,
         Some("Potato".to_string()),
     );
+    test_elements.potato_button = button.id;
     gui.add_button(button, Tag::SelectionPotato);
 
     cursor.y += 0.1;
@@ -40,6 +62,7 @@ pub fn def_gui() -> Gui<Tag> {
         default_color,
         Some("Hot Chip".to_string()),
     );
+    test_elements.hot_chip_button = button.id;
     gui.add_button(button, Tag::SelectionHotChip);
 
     // slider now
@@ -56,6 +79,7 @@ pub fn def_gui() -> Gui<Tag> {
         default_color,
         Some("Temperature".to_string()),
     );
+    test_elements.slider = slider.id;
     gui.add_slider(slider, Tag::SetTemperature);
 
     // vertical slider now
@@ -72,9 +96,20 @@ pub fn def_gui() -> Gui<Tag> {
         default_color,
         Some("Height".to_string()),
     );
+    test_elements.vertical_slider = vertical_slider.id;
     gui.add_vertical_slider(vertical_slider, Tag::SetHeight);
 
-    gui
+    // draggable
+    cursor.y += 0.2;
+    let draggable = Draggable::new(
+        cursor,
+        Vec2::new(0.1, 0.1),
+        default_color,
+        Some("Thumb".to_string()),
+    );
+    gui.add_draggable(draggable, Tag::MoveThumb);
+
+    (gui, test_elements)
 }
 
 pub fn draw_gui(gui: &Gui<Tag>, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
@@ -87,6 +122,9 @@ pub fn draw_gui(gui: &Gui<Tag>, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
     }
     for vertical_slider in &gui.vertical_sliders {
         draw_vertical_slider(d, vertical_slider, resolution);
+    }
+    for draggable in &gui.draggables {
+        draw_draggable(d, draggable, resolution);
     }
 }
 
@@ -329,3 +367,235 @@ pub fn draw_vertical_slider(
         slider.color,
     );
 }
+
+pub fn draw_draggable(
+    d: &mut RaylibTextureMode<RaylibDrawHandle>,
+    draggable: &Draggable,
+    resolution: Vec2,
+) {
+    let absolute_position = resolution * draggable.position;
+    let absolute_dimensions = resolution * draggable.size;
+
+    let ap = absolute_position;
+    let ad = absolute_dimensions;
+    let min_dim = ad.x.min(ad.y);
+    let offset = Vec2::new(1.0, 1.0);
+
+    if !draggable.hovered {
+        // shadow
+        d.draw_rectangle(
+            ap.x as i32,
+            ap.y as i32,
+            (ad.x + offset.x) as i32,
+            (ad.y + offset.y) as i32,
+            raylib::color::Color::BLACK,
+        );
+
+        // highlight
+        d.draw_rectangle(
+            ap.x as i32,
+            ap.y as i32,
+            ad.x as i32,
+            ad.y as i32,
+            raylib::color::Color::WHITE,
+        );
+
+        // draggable
+        d.draw_rectangle(
+            (ap.x + offset.x) as i32,
+            (ap.y + offset.y) as i32,
+            (ad.x - offset.x) as i32,
+            (ad.y - offset.y) as i32,
+            draggable.color,
+        );
+
+        // draw 2 lines to indicate the draggable is grabbable
+        // draw one line 30% from the top, and one 30% from the bottom
+        let line_start_x = ad.x * 0.3 + ap.x;
+        let line_end_x = ad.x * 0.7 + ap.x;
+
+        let upper_line_height = ad.y * 0.3 + ap.y;
+        let lower_line_height = ad.y * 0.7 + ap.y;
+
+        let line_thickness = 2;
+
+        let color_mod = 0.3;
+        let line_color = raylib::color::Color::new(
+            (draggable.color.r as f32 * color_mod) as u8,
+            (draggable.color.g as f32 * color_mod) as u8,
+            (draggable.color.b as f32 * color_mod) as u8,
+            draggable.color.a,
+        );
+        d.draw_line(
+            line_start_x as i32,
+            upper_line_height as i32,
+            line_end_x as i32,
+            upper_line_height as i32,
+            line_color,
+        );
+        d.draw_line(
+            line_start_x as i32,
+            lower_line_height as i32,
+            line_end_x as i32,
+            lower_line_height as i32,
+            line_color,
+        );
+    } else {
+        // shadow
+        d.draw_rectangle(
+            ap.x as i32,
+            ap.y as i32,
+            (ad.x + offset.x) as i32,
+            (ad.y + offset.y) as i32,
+            raylib::color::Color::BLACK,
+        );
+
+        // highlight
+        d.draw_rectangle(
+            ap.x as i32,
+            ap.y as i32,
+            ad.x as i32,
+            ad.y as i32,
+            raylib::color::Color::WHITE,
+        );
+
+        // button
+        d.draw_rectangle(
+            (ap.x + offset.x) as i32,
+            (ap.y + offset.y) as i32,
+            (ad.x - offset.x) as i32,
+            (ad.y - offset.y) as i32,
+            raylib::color::Color::new(
+                (draggable.color.r as f32 * 0.65) as u8,
+                (draggable.color.g as f32 * 0.65) as u8,
+                (draggable.color.b as f32 * 0.65) as u8,
+                draggable.color.a,
+            ),
+        );
+    }
+}
+
+/*
+
+def draw_draggable(surface, draggable, resolution):
+    absolute_position = resolution * draggable.position
+    absolute_dimensions = resolution * draggable.scale
+
+    ap = absolute_position
+    ad = absolute_dimensions
+    min_dim = min(ad.x, ad.y)
+    offset = glm.vec2(1, 1)
+
+    if not draggable.hovered:
+        # shadow
+        pygame.draw.rect(
+            surface,
+            (0, 0, 0),
+            (ap.to_tuple(), (ad + offset).to_tuple()),
+        )
+
+        # highlight
+        pygame.draw.rect(
+            surface,
+            (255, 255, 255),
+            (ap.to_tuple(), (ad).to_tuple()),
+        )
+
+        # draggable
+        pygame.draw.rect(
+            surface,
+            draggable.color,
+            ((ap + offset).to_tuple(), (ad - offset).to_tuple()),
+        )
+
+        # draw 2 lines to indicate the draggable is grabbable
+        # draw one line 30% from the top, and one 30% from the bottom
+        line_start_x = ad.x * 0.3 + ap.x
+        line_end_x = ad.x * 0.7 + ap.x
+
+        upper_line_height = ad.y * 0.3 + ap.y
+        lower_line_height = ad.y * 0.7 + ap.y
+
+        line_thickness = 2
+
+        color_mod = 0.3
+        line_color = [ce * color_mod for ce in draggable.color]
+        pygame.draw.line(
+            surface,
+            line_color,
+            (line_start_x, upper_line_height),
+            (line_end_x, upper_line_height),
+            line_thickness,
+        )
+        pygame.draw.line(
+            surface,
+            line_color,
+            (line_start_x, lower_line_height),
+            (line_end_x, lower_line_height),
+            line_thickness,
+        )
+
+    else:  # draggable hovered
+        # shadow
+        pygame.draw.rect(
+            surface,
+            (0, 0, 0),
+            (ap.to_tuple(), (ad + offset).to_tuple()),
+        )
+
+        # highlight
+        pygame.draw.rect(
+            surface,
+            (255, 255, 255),
+            (ap.to_tuple(), (ad).to_tuple()),
+        )
+
+        # button
+        pygame.draw.rect(
+            surface,
+            (
+                draggable.color[0] * 0.65,
+                draggable.color[1] * 0.65,
+                draggable.color[2] * 0.65,
+            ),
+            ((ap + offset).to_tuple(), (ad - offset).to_tuple()),
+        )
+
+    if draggable.image:
+        # scale the image to fit the button
+        # scale both dimensions by the same amount, but scale the larger dimension to fit the button
+        image_dimensions = glm.vec2(
+            draggable.image.get_width(), draggable.image.get_height()
+        )
+        larger_dimension = max(image_dimensions.x, image_dimensions.y)
+        scale_factor = (ad * 0.9) / larger_dimension
+        scaled_dimensions = image_dimensions * scale_factor
+        centered_offset = scaled_dimensions * 0.05
+
+        image_position = offset + ap + ad / 2 - scaled_dimensions / 2
+
+        # draw the image
+        surface.blit(
+            pygame.transform.scale(
+                draggable.image,
+                (int(scaled_dimensions.x), int(scaled_dimensions.y)),
+            ),
+            image_position.to_tuple(),
+        )
+
+    elif draggable.label:
+        font_offset = 0
+
+        font = pygame.font.SysFont("Arial", 24)
+        text = font.render(draggable.label, True, (0, 0, 0))
+        text_position = (
+            ap.x + ad.x / 2 - text.get_width() / 2,
+            ap.y + ad.y / 2 - text.get_height() / 2,
+        )
+
+        surface.blit(
+            text,
+            text_position,
+        )
+
+*/
