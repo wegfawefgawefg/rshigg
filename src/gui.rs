@@ -1,309 +1,71 @@
 use glam::Vec2;
-use raylib::{
-    color::Color,
-    drawing::{RaylibDraw, RaylibDrawHandle, RaylibTextureMode},
-    text::measure_text_ex,
-};
+use std::collections::HashMap;
 
-use crate::{
-    rshigg::{Button, Gui, Slider},
-    DIMS,
-};
+use super::{Button, Slider, TaggedEvent};
 
-enum Textures {}
-
-pub enum FoodSelector {
-    SelectionPotato,
-    SelectionHotChip,
-    SelectionIceCream,
-    SelectionSteak,
+pub struct Gui<T: Clone + Copy> {
+    pub el_to_tag_map: HashMap<u32, T>,
+    pub buttons: Vec<Button>,
+    pub sliders: Vec<Slider>,
 }
 
-pub fn def_gui() -> Gui {
-    let default_color = Color::new(200, 200, 200, 255);
-
-    let mut gui = Gui::new();
-    let mut cursor = Vec2::new(0.2, 0.2);
-    let element_dims = Vec2::new(0.1, 0.05);
-    let button = Button::new(
-        cursor,
-        element_dims,
-        default_color,
-        Some("Potato".to_string()),
-    );
-    gui.add_button(button);
-
-    cursor.y += 0.1;
-    let button = Button::new(
-        cursor,
-        element_dims,
-        default_color,
-        Some("Hot Chip".to_string()),
-    );
-    gui.add_button(button);
-
-    // slider now
-    cursor.y += 0.2;
-    let slider = Slider::new(
-        cursor,
-        Vec2::new(0.2, 0.05),
-        0.02,
-        0.0,
-        100.0,
-        1.0,
-        50.0,
-        0.05,
-        default_color,
-        Some("Temperature".to_string()),
-    );
-    gui.add_slider(slider);
-
-    gui
-}
-
-pub fn draw_gui(gui: &Gui, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
-    let resolution = Vec2::new(DIMS.x as f32, DIMS.y as f32);
-    for button in &gui.buttons {
-        draw_button(d, button, resolution);
-    }
-    for slider in &gui.sliders {
-        draw_slider(d, slider, resolution);
-    }
-}
-
-pub fn draw_button(d: &mut RaylibTextureMode<RaylibDrawHandle>, button: &Button, resolution: Vec2) {
-    let absolute_position = resolution * button.position;
-    let absolute_dimensions = resolution * button.size;
-
-    let ap = absolute_position;
-    let ad = absolute_dimensions;
-    let min_dim = ad.x.min(ad.y);
-    let offset = Vec2::new(1.0, 1.0);
-
-    if !button.pressed {
-        if !button.hovered {
-            // shadow
-            d.draw_rectangle(
-                ap.x as i32,
-                ap.y as i32,
-                (ad.x + offset.x) as i32,
-                (ad.y + offset.y) as i32,
-                raylib::color::Color::BLACK,
-            );
-
-            // highlight
-            d.draw_rectangle(
-                ap.x as i32,
-                ap.y as i32,
-                ad.x as i32,
-                ad.y as i32,
-                raylib::color::Color::WHITE,
-            );
-
-            // button
-            d.draw_rectangle(
-                (ap.x + offset.x) as i32,
-                (ap.y + offset.y) as i32,
-                (ad.x - offset.x) as i32,
-                (ad.y - offset.y) as i32,
-                button.color,
-            );
-        } else {
-            // shadow
-            d.draw_rectangle(
-                ap.x as i32,
-                ap.y as i32,
-                (ad.x + offset.x) as i32,
-                (ad.y + offset.y) as i32,
-                raylib::color::Color::BLACK,
-            );
-
-            // highlight
-            d.draw_rectangle(
-                ap.x as i32,
-                ap.y as i32,
-                ad.x as i32,
-                ad.y as i32,
-                raylib::color::Color::WHITE,
-            );
-
-            // button
-            d.draw_rectangle(
-                (ap.x + offset.x) as i32,
-                (ap.y + offset.y) as i32,
-                (ad.x - offset.x) as i32,
-                (ad.y - offset.y) as i32,
-                raylib::color::Color::new(
-                    (button.color.r as f32 * 0.65) as u8,
-                    (button.color.g as f32 * 0.65) as u8,
-                    (button.color.b as f32 * 0.65) as u8,
-                    button.color.a,
-                ),
-            );
+impl<T: Clone + Copy> Gui<T> {
+    pub fn new() -> Self {
+        Self {
+            el_to_tag_map: HashMap::new(),
+            buttons: Vec::new(),
+            sliders: Vec::new(),
         }
-    } else {
-        // under shadow
-        d.draw_rectangle(
-            ap.x as i32,
-            ap.y as i32,
-            (ad.x + offset.x) as i32,
-            (ad.y + offset.y) as i32,
-            raylib::color::Color::WHITE,
-        );
-
-        // under highlight
-        d.draw_rectangle(
-            ap.x as i32,
-            ap.y as i32,
-            ad.x as i32,
-            ad.y as i32,
-            raylib::color::Color::BLACK,
-        );
-
-        // button
-        d.draw_rectangle(
-            (ap.x + offset.x) as i32,
-            (ap.y + offset.y) as i32,
-            (ad.x - offset.x) as i32,
-            (ad.y - offset.y) as i32,
-            raylib::color::Color::new(
-                (button.color.r as f32 * 0.65) as u8,
-                (button.color.g as f32 * 0.65) as u8,
-                (button.color.b as f32 * 0.65) as u8,
-                button.color.a,
-            ),
-        );
     }
 
-    if let Some(label) = &button.label {
-        let font = d.get_font_default();
-        let text_shape = measure_text_ex(font, label, 20.0, 1.0);
-        let text_center = text_shape / 2.0;
+    //// ADD ELEMENTS
+    pub fn add_button(&mut self, button: Button, tag: T) {
+        self.el_to_tag_map.insert(button.id, tag);
+        self.buttons.push(button);
+    }
 
-        d.draw_text(
-            label,
-            (ap.x + ad.x / 2.0 - text_center.x) as i32,
-            (ap.y + ad.y / 2.0 - text_center.y) as i32,
-            20,
-            raylib::color::Color::BLACK,
-        );
+    pub fn add_slider(&mut self, slider: Slider, tag: T) {
+        self.el_to_tag_map.insert(slider.id, tag);
+        self.sliders.push(slider);
+    }
+
+    //// REMOVE ELEMENTS
+    pub fn remove_button(&mut self, id: u32) {
+        self.buttons.retain(|button| button.id != id);
+        self.el_to_tag_map.remove(&id);
+    }
+
+    pub fn remove_slider(&mut self, id: u32) {
+        self.sliders.retain(|slider| slider.id != id);
+        self.el_to_tag_map.remove(&id);
+    }
+
+    ///Step the gui, and all elements within.
+    /// Mouse position should ideally be normalized between [0.0, 1.0].
+    /// Values outside the range [0.0, 1.0] can be treated as outside the gui rect.
+    /// This isnt required but will make things a whole lot easier for you.
+    pub fn step(&mut self, mouse_position: Vec2, mouse_pressed: bool) -> Vec<TaggedEvent<T>> {
+        let mut tagged_events = Vec::new();
+        for button in self.buttons.iter_mut() {
+            if let Some(event) = button.step(mouse_position, mouse_pressed) {
+                if let Some(tag) = self.el_to_tag_map.get(&button.id) {
+                    tagged_events.push(TaggedEvent { tag: *tag, event });
+                }
+            }
+        }
+        for slider in self.sliders.iter_mut() {
+            if let Some(event) = slider.step(mouse_position, mouse_pressed) {
+                if let Some(tag) = self.el_to_tag_map.get(&slider.id) {
+                    tagged_events.push(TaggedEvent { tag: *tag, event });
+                }
+            }
+        }
+        tagged_events
     }
 }
 
-pub fn draw_slider(d: &mut RaylibTextureMode<RaylibDrawHandle>, slider: &Slider, resolution: Vec2) {
-    let absolute_position = resolution * slider.position;
-    let absolute_dimensions = resolution * slider.size;
-
-    let ap = absolute_position;
-    let ad = absolute_dimensions;
-    let offset = Vec2::new(1.0, 1.0);
-
-    // draw body
-    d.draw_rectangle(
-        ap.x as i32,
-        ap.y as i32,
-        ad.x as i32,
-        ad.y as i32,
-        raylib::color::Color::new(100, 100, 100, 255),
-    );
-
-    // draw body
-    let value_fraction = (slider.value - slider.minimum) / (slider.maximum - slider.minimum); // range [0.0 , 1.0]
-    let rel_position_x = value_fraction * slider.size.x; // [0.0, slider_rel_width]
-    let absolute_thumb_x = absolute_position.x + rel_position_x * resolution.x;
-
-    let absolute_thumb_width = resolution.x * slider.thumb_width;
-    let half_thumb_width = absolute_thumb_width / 2.0;
-
-    let thumb_position = Vec2::new(absolute_thumb_x - half_thumb_width, absolute_position.y);
-    let absolute_thumb_dimensions = Vec2::new(absolute_thumb_width, absolute_dimensions.y);
-
-    let tp = thumb_position;
-    let td = absolute_thumb_dimensions;
-    let offset = Vec2::new(1.0, 1.0);
-
-    // shadow
-    d.draw_rectangle(
-        tp.x as i32,
-        tp.y as i32,
-        (td.x + offset.x) as i32,
-        (td.y + offset.y) as i32,
-        raylib::color::Color::BLACK,
-    );
-
-    // highlight
-    d.draw_rectangle(
-        tp.x as i32,
-        tp.y as i32,
-        td.x as i32,
-        td.y as i32,
-        raylib::color::Color::WHITE,
-    );
-
-    // slider center
-    d.draw_rectangle(
-        (tp.x + offset.x) as i32,
-        (tp.y + offset.y) as i32,
-        (td.x - offset.x) as i32,
-        (td.y - offset.y) as i32,
-        slider.color,
-    );
+impl<T: Clone + Copy> Default for Gui<T> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
-
-/*
-
-def draw_slider(surface, slider, resolution):
-    absolute_position = resolution * slider.position
-    absolute_dimensions = resolution * slider.scale
-
-    ap = absolute_position
-    ad = absolute_dimensions
-    offset = glm.vec2(1, 1)
-
-    # draw body
-    pygame.draw.rect(
-        surface,
-        (100, 100, 100),
-        (ap.to_tuple(), (ad).to_tuple()),
-    )
-
-    # draw body
-    value_fraction = (slider.value - slider.minimum) / (
-        slider.maximum - slider.minimum
-    )  # range [0.0 , 1.0]
-    rel_position_x = value_fraction * slider.scale.x  # [0.0, slider_rel_width]
-    absolute_thumb_x = absolute_position.x + rel_position_x * resolution.x
-
-    absolute_thumb_width = resolution.x * slider.thumb_width
-    half_thumb_width = absolute_thumb_width / 2.0
-
-    thumb_position = glm.vec2(absolute_thumb_x - half_thumb_width, absolute_position.y)
-    absolute_thumb_dimensions = glm.vec2(absolute_thumb_width, absolute_dimensions.y)
-
-    tp = thumb_position
-    td = absolute_thumb_dimensions
-    offset = glm.vec2(1, 1)
-
-    # shadow
-    pygame.draw.rect(
-        surface,
-        (0, 0, 0),
-        (tp.to_tuple(), (td + offset).to_tuple()),
-    )
-
-    # highlight
-    pygame.draw.rect(
-        surface,
-        (255, 255, 255),
-        (tp.to_tuple(), (td).to_tuple()),
-    )
-
-    # slider center
-    pygame.draw.rect(
-        surface,
-        slider.color,
-        ((tp + offset).to_tuple(), (td - offset).to_tuple()),
-    )
-
-
-*/

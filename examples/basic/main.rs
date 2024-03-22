@@ -1,9 +1,9 @@
 use glam::{IVec2, UVec2};
 use raylib::prelude::*;
 use raylib::{ffi::SetTraceLogLevel, prelude::TraceLogLevel};
+extern crate rshigg;
 
 mod gui;
-mod rshigg;
 mod sketch;
 
 const TIMESTEP: f32 = 1.0 / sketch::FRAMES_PER_SECOND as f32;
@@ -12,7 +12,7 @@ const DIMS: UVec2 = WINDOW_DIMS;
 
 fn main() {
     let mut state = sketch::State::new();
-    let (mut rl, mut rlt) = raylib::init().title("RShiGG Development").build();
+    let (mut rl, rlt) = raylib::init().title("RShiGG Development").build();
     unsafe {
         SetTraceLogLevel(TraceLogLevel::LOG_WARNING as i32);
     }
