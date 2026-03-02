@@ -1,7 +1,6 @@
 use std::sync::atomic::Ordering;
 
 use glam::Vec2;
-use raylib::color::Color;
 
 use super::{Event, ELEMENT_NEXT_ID};
 
@@ -15,7 +14,6 @@ pub struct Slider {
     pub step_size: f32,
     pub snap_sensetivity_fraction: f32,
     pub value: f32,
-    pub color: Color,
     pub label: Option<String>,
     pub hovered: bool,
     pub was_pressed: bool,
@@ -32,7 +30,6 @@ impl Slider {
         step_size: f32,
         default_value: f32,
         snap_sensetivity_fraction: f32,
-        color: Color,
         label: Option<String>,
     ) -> Self {
         Self {
@@ -45,7 +42,6 @@ impl Slider {
             step_size,
             snap_sensetivity_fraction,
             value: default_value,
-            color,
             label,
             hovered: false,
             was_pressed: false,

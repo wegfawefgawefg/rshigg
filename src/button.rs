@@ -3,13 +3,11 @@ use std::sync::atomic::Ordering;
 use super::{common::ELEMENT_NEXT_ID, Event};
 
 use glam::Vec2;
-use raylib::color::Color;
 pub struct Button {
     pub id: u32,
     pub position: Vec2,
     pub size: Vec2,
 
-    pub color: Color,
     pub label: Option<String>,
 
     pub hovered: bool,
@@ -18,13 +16,12 @@ pub struct Button {
 }
 
 impl Button {
-    pub fn new(position: Vec2, size: Vec2, color: Color, label: Option<String>) -> Self {
+    pub fn new(position: Vec2, size: Vec2, label: Option<String>) -> Self {
         Self {
             id: ELEMENT_NEXT_ID.fetch_add(1, Ordering::SeqCst),
             position,
             size,
 
-            color,
             label,
 
             hovered: false,

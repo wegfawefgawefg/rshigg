@@ -1,15 +1,27 @@
+mod backend;
 mod button;
+mod button_toggle;
 mod common;
 mod draggable;
 mod gui;
 mod label;
+mod left_right_selector;
+mod move_and_resize_thumbs;
 mod slider;
+mod theme;
+mod utils;
 mod vertical_slider;
 
+pub use self::backend::*;
 pub use self::button::Button;
+pub use self::button_toggle::ButtonToggle;
 pub use self::common::*;
 pub use self::draggable::Draggable;
 pub use self::gui::Gui;
 pub use self::label::Label;
+pub use self::left_right_selector::LeftRightSelector;
+pub use self::move_and_resize_thumbs::MoveAndResizeThumbs;
 pub use self::slider::Slider;
+pub use self::theme::*;
+pub use self::utils::*;
 pub use self::vertical_slider::VerticalSlider;

@@ -3,7 +3,9 @@ use raylib::prelude::*;
 use raylib::{ffi::SetTraceLogLevel, prelude::TraceLogLevel};
 extern crate rshigg;
 
+mod draw;
 mod gui;
+mod settings_window;
 mod sketch;
 
 const TIMESTEP: f32 = 1.0 / sketch::FRAMES_PER_SECOND as f32;
@@ -28,10 +30,12 @@ fn main() {
     let mouse_scale = DIMS.as_vec2() / WINDOW_DIMS.as_vec2();
     rl.set_mouse_scale(mouse_scale.x, mouse_scale.y);
 
-    let mut render_texture = rl.load_render_texture(DIMS.x, DIMS.y).unwrap_or_else(|e| {
-        println!("Error creating render texture: {}", e);
-        std::process::exit(1);
-    });
+    let mut render_texture = rl
+        .load_render_texture(&rlt, DIMS.x, DIMS.y)
+        .unwrap_or_else(|e| {
+            println!("Error creating render texture: {}", e);
+            std::process::exit(1);
+        });
 
     while state.running && !rl.window_should_close() {
         sketch::process_events_and_input(&mut rl, &mut state);

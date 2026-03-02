@@ -2,8 +2,10 @@ use glam::Vec2;
 use raylib::prelude::*;
 
 use crate::{
-    gui::{def_gui, draw_gui, Tag, TestElements},
+    draw::draw_gui,
+    gui::{def_test_elements_gui, Tag, TestElements},
     rshigg::{Event, Gui, TaggedEvent},
+    settings_window::SettingsWindow,
     DIMS,
 };
 
@@ -41,19 +43,23 @@ pub struct State {
     pub gui: Gui<Tag>,
     pub settings: Settings,
     pub test_elements: TestElements,
+    pub settings_window: SettingsWindow,
 }
 
 impl State {
     pub fn new() -> Self {
-        let (mut gui, mut test_elements) = def_gui();
+        let (mut gui, mut test_elements) = def_test_elements_gui();
         let drag_thumb = test_elements.drag_thumb;
         reposition_test_elements(&mut test_elements, &mut gui, drag_thumb);
+
+        let settings_window = SettingsWindow::new(Vec2::new(0.1, 0.1), Vec2::new(0.8, 0.8));
         Self {
             running: true,
             time_since_last_update: 0.0,
             gui,
             settings: Settings::new(),
             test_elements,
+            settings_window,
         }
     }
 }
@@ -114,6 +120,10 @@ pub fn handle_gui_events(state: &mut State, tagged_events: Vec<TaggedEvent<Tag>>
                 state.settings.potato = !state.settings.potato;
                 println!("Potato: {}", state.settings.potato);
             }
+            (Tag::SelectionHotChip, Event::ButtonReleased) => {
+                state.settings.hot_chip = !state.settings.hot_chip;
+                println!("Hot Chip: {}", state.settings.hot_chip);
+            }
             (Tag::SetTemperature, Event::SliderMoved { value }) => {
                 state.settings.temperature = value;
                 println!("Temp set to {}", value);
@@ -144,6 +154,8 @@ pub fn step(rl: &mut RaylibHandle, state: &mut State) {
 
     let tagged_events = state.gui.step(nmp, mouse_pressed);
     handle_gui_events(state, tagged_events);
+
+    let _settings_window_events = state.settings_window.step(nmp, mouse_pressed);
 }
 
 pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
@@ -171,11 +183,16 @@ pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
         );
     }
 
-    draw_gui(&state.gui, d);
+    let resolution = Vec2::new(DIMS.x as f32, DIMS.y as f32);
+    draw_gui(&state.gui, d, resolution);
+    draw_gui(&state.settings_window.gui, d, resolution);
 
     // render the settings in the top left
     let list_items = vec![
         format!("Potato: {}", state.settings.potato),
+        format!("Hot Chip: {}", state.settings.hot_chip),
+        format!("Ice Cream: {}", state.settings.ice_cream),
+        format!("Steak: {}", state.settings.steak),
         format!("Temperature: {}", state.settings.temperature),
         format!("Height: {}", state.settings.height),
         format!("Draggable Pos: {:?}", state.settings.draggable_pos),
