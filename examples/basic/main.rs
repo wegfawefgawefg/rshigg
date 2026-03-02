@@ -60,11 +60,8 @@ fn main() {
 }
 
 pub fn center_window(rl: &mut raylib::RaylibHandle) {
-    let screen_dims = IVec2::new(rl.get_screen_width(), rl.get_screen_height());
-    let screen_center = screen_dims / 2;
-    let window_center = WINDOW_DIMS.as_ivec2() / 2;
-    let offset = IVec2::new(screen_center.x, screen_center.y + window_center.y);
-    rl.set_window_position(offset.x, offset.y);
+    let _ = IVec2::new(rl.get_screen_width(), rl.get_screen_height());
+    rl.set_window_position(40, 40);
     rl.set_target_fps(144);
 }
 

@@ -47,6 +47,20 @@ cargo run --example custom_backend
 
 Runs a non-raylib backend implementation that records draw commands.
 
+## Screenshots
+
+Basic demo:
+
+![Basic demo](screenshots/basic_demo.png)
+
+Full demo:
+
+![Full demo](screenshots/full_demo.png)
+
+RPG status demo:
+
+![RPG status demo](screenshots/rpg_status_demo.png)
+
 ## Core Concepts
 
 1. Build a `Gui<Tag>` and add elements.
