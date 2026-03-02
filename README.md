@@ -48,14 +48,13 @@ Runs a non-raylib backend implementation that records draw commands.
 ## Core Concepts
 
 1. Build a `Gui<Tag>` and add elements.
-2. Step GUI state with either:
-   - normalized mouse coordinates via `Gui::step(...)`
-   - pixel mouse coordinates via `Gui::step_pixels(...)`
-3. Handle returned `TaggedEvent<Tag>` values.
-4. Render widgets using:
+2. Step GUI state with pixel mouse coordinates via `Gui::step(...)`.
+3. For GUI rendered in sub-rectangles/scaled surfaces, use `Gui::step_in_rect(...)`.
+4. Handle returned `TaggedEvent<Tag>` values.
+5. Render widgets using:
    - your own backend implementing `DrawBackend`
    - `rshigg::draw_gui(...)` with a `Theme`
-5. Optionally set widget image styles (background, track, thumb) and let the backend decide how to render images.
+6. Optionally set widget image styles (background, track, thumb) and let the backend decide how to render images.
 
 ## Widgets
 
@@ -82,14 +81,14 @@ enum Tag {
 
 let mut gui = Gui::new();
 gui.add_button(
-    Button::new(Vec2::new(0.05, 0.05), Vec2::new(0.2, 0.1), Some("Mute".into())),
+    Button::new(Vec2::new(32.0, 24.0), Vec2::new(160.0, 54.0), Some("Mute".into())),
     Tag::ToggleMute,
 );
 gui.add_slider(
     Slider::new(
-        Vec2::new(0.05, 0.2),
-        Vec2::new(0.9, 0.1),
-        0.04,
+        Vec2::new(32.0, 108.0),
+        Vec2::new(576.0, 43.2),
+        24.0,
         0.0,
         100.0,
         1.0,
@@ -100,7 +99,7 @@ gui.add_slider(
     Tag::SetVolume,
 );
 
-let events = gui.step(Vec2::new(0.5, 0.25), true);
+let events = gui.step(Vec2::new(120.0, 84.0), true);
 ```
 
 ## Backend API
@@ -122,7 +121,7 @@ Theme/widget rendering lives in `rshigg::draw_gui(...)`, which maps widgets to t
 
 ## Utilities
 
-`transform_mouse_to_normalized_subsurface_coords(...)` is provided for mouse coordinate remapping when drawing GUI into subregions.
+`transform_mouse_to_subsurface_coords(...)` is provided for mouse coordinate remapping when drawing GUI into subregions.
 
 ## Design Docs
 

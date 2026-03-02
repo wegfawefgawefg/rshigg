@@ -11,6 +11,10 @@ use crate::raylib_skin::{
 pub const WINDOW_DIMS: UVec2 = UVec2::new(1280, 720);
 pub const DIMS: UVec2 = WINDOW_DIMS;
 
+fn px(x: f32, y: f32) -> Vec2 {
+    Vec2::new(x * DIMS.x as f32, y * DIMS.y as f32)
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Tag {
     OpenSettings,
@@ -59,24 +63,20 @@ impl DemoState {
         let mut main_gui = Gui::new();
         let mut settings_gui = Gui::new();
 
-        let open_button = Button::new(
-            Vec2::new(0.02, 0.02),
-            Vec2::new(0.14, 0.07),
-            Some("Settings".to_string()),
-        );
+        let open_button = Button::new(px(0.02, 0.02), px(0.14, 0.07), Some("Settings".to_string()));
         let mut open_button = open_button;
         open_button.set_background_image(rshigg::ImageStyle::stretched(IMG_OPTION_BUTTON));
         let open_settings_button_id = open_button.id;
         main_gui.add_button(open_button, Tag::OpenSettings);
 
-        let preview_pos = Vec2::new(0.58, 0.18);
-        let preview_size = Vec2::new(0.34, 0.24);
+        let preview_pos = px(0.58, 0.18);
+        let preview_size = px(0.34, 0.24);
         let preview_thumbs =
-            MoveAndResizeThumbs::new(Vec2::new(0.02, 0.02), preview_pos, preview_size);
+            MoveAndResizeThumbs::new(Vec2::new(18.0, 18.0), preview_pos, preview_size);
         main_gui.add_move_and_resize_thumbs(preview_thumbs, Tag::MoveAndResizePreview);
 
-        let settings_pos = Vec2::new(0.08, 0.08);
-        let settings_size = Vec2::new(0.55, 0.82);
+        let settings_pos = px(0.08, 0.08);
+        let settings_size = px(0.55, 0.82);
 
         let move_window = Draggable::new(
             settings_pos,
@@ -101,7 +101,7 @@ impl DemoState {
         let scroll_slider = VerticalSlider::new(
             Vec2::ZERO,
             Vec2::ZERO,
-            0.03,
+            24.0,
             0.0,
             1.0,
             0.05,
@@ -136,7 +136,7 @@ impl DemoState {
                     let mut slider = Slider::new(
                         Vec2::ZERO,
                         Vec2::ZERO,
-                        0.02,
+                        16.0,
                         0.0,
                         100.0,
                         1.0,
@@ -154,7 +154,7 @@ impl DemoState {
                     let mut selector = LeftRightSelector::new(
                         Vec2::ZERO,
                         Vec2::ZERO,
-                        0.04,
+                        32.0,
                         vec![
                             "Low".to_string(),
                             "Medium".to_string(),
@@ -324,7 +324,12 @@ pub fn layout_settings(state: &mut DemoState) {
         scroll.minimum = 0.0;
         scroll.maximum = max_scroll;
         scroll.step_size = row_stride.max(0.001);
-        scroll.thumb_height = (row_h / viewport_h).clamp(0.03, 0.4);
+        let visible_fraction = if content_h <= 0.0 {
+            1.0
+        } else {
+            (viewport_h / content_h).clamp(0.05, 1.0)
+        };
+        scroll.thumb_height = (viewport_h * visible_fraction).clamp(18.0, viewport_h);
         scroll.value = state.scroll_value;
     }
 
@@ -386,7 +391,7 @@ pub fn settings_scroll_clip_rect(state: &DemoState) -> rshigg::Rect {
     let size = state.settings_size;
     let clip_pos = pos;
     let clip_size = size;
-    rshigg::Rect::new(clip_pos * DIMS.as_vec2(), clip_size * DIMS.as_vec2())
+    rshigg::Rect::new(clip_pos, clip_size)
 }
 
 fn sync_main_visibility(state: &mut DemoState) {

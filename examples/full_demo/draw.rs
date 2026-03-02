@@ -7,7 +7,7 @@ use raylib::{
 use rshigg::{DrawBackend, Rect, Theme};
 
 use crate::raylib_skin::{SkinRaylibBackend, SkinTextures};
-use crate::state::{settings_scroll_clip_rect, DemoState, DIMS, WINDOW_DIMS};
+use crate::state::{settings_scroll_clip_rect, DemoState, WINDOW_DIMS};
 
 pub fn draw_scene(
     state: &DemoState,
@@ -23,11 +23,7 @@ pub fn draw_scene(
         RayColor::new(200, 220, 200, 255),
     );
 
-    let preview = Rect::from_normalized(
-        state.preview_rect_pos,
-        state.preview_rect_size,
-        DIMS.as_vec2(),
-    );
+    let preview = Rect::new(state.preview_rect_pos, state.preview_rect_size);
     d.draw_rectangle(
         preview.position.x as i32,
         preview.position.y as i32,
@@ -50,14 +46,13 @@ pub fn draw_scene(
         RayColor::new(230, 230, 240, 255),
     );
 
-    let resolution = DIMS.as_vec2();
     let mut backend = SkinRaylibBackend::new(d, skins);
     let theme = Theme::default();
-    rshigg::draw_gui(&state.main_gui, &mut backend, resolution, &theme);
+    rshigg::draw_gui(&state.main_gui, &mut backend, &theme);
     if state.settings_open {
         let scroll_clip = settings_scroll_clip_rect(state);
         backend.push_clip_rect(scroll_clip);
-        rshigg::draw_gui(&state.settings_gui, &mut backend, resolution, &theme);
+        rshigg::draw_gui(&state.settings_gui, &mut backend, &theme);
         backend.pop_clip_rect();
     }
 }

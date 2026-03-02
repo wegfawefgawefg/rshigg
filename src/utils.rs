@@ -1,13 +1,22 @@
 use glam::Vec2;
 
-pub fn transform_mouse_to_normalized_subsurface_coords(
-    normalized_mouse_pos: Vec2,
-    surface_resolution: Vec2,
+pub fn transform_mouse_to_subsurface_coords(
+    mouse_position_surface: Vec2,
     subsurface_position: Vec2,
+    subsurface_size_surface: Vec2,
     subsurface_resolution: Vec2,
 ) -> Vec2 {
-    let subsurface_normalized_position = subsurface_position / surface_resolution;
-    let subsurface_normalized_size = subsurface_resolution / surface_resolution;
+    if subsurface_size_surface.x <= 0.0
+        || subsurface_size_surface.y <= 0.0
+        || subsurface_resolution.x <= 0.0
+        || subsurface_resolution.y <= 0.0
+    {
+        return Vec2::new(-1.0, -1.0);
+    }
 
-    (normalized_mouse_pos - subsurface_normalized_position) / subsurface_normalized_size
+    let local_surface = mouse_position_surface - subsurface_position;
+    Vec2::new(
+        local_surface.x * subsurface_resolution.x / subsurface_size_surface.x,
+        local_surface.y * subsurface_resolution.y / subsurface_size_surface.y,
+    )
 }

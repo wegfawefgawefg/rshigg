@@ -2,10 +2,10 @@ use glam::Vec2;
 use raylib::{drawing::RaylibDraw, math::Vector2, prelude::Color as RaylibColor};
 use rshigg::{Color, DrawBackend, Gui, Rect, Theme};
 
-pub fn draw_gui<T: Clone + Copy, D: RaylibDraw>(gui: &Gui<T>, draw: &mut D, resolution: Vec2) {
+pub fn draw_gui<T: Clone + Copy, D: RaylibDraw>(gui: &Gui<T>, draw: &mut D) {
     let mut backend = RaylibBackend { draw };
     let theme = Theme::default();
-    rshigg::draw_gui(gui, &mut backend, resolution, &theme);
+    rshigg::draw_gui(gui, &mut backend, &theme);
 }
 
 struct RaylibBackend<'a, D: RaylibDraw> {

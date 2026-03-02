@@ -1,6 +1,6 @@
 use glam::Vec2;
 use rshigg::{
-    transform_mouse_to_normalized_subsurface_coords, Button, ButtonToggle, Color, DrawBackend, Gui,
+    transform_mouse_to_subsurface_coords, Button, ButtonToggle, Color, DrawBackend, Gui,
     ImageStyle, LeftRightSelector, MoveAndResizeThumbs, Rect, Slider, Theme, VerticalSlider,
 };
 
@@ -16,20 +16,19 @@ enum Tag {
 
 fn main() {
     let mut gui = Gui::new();
-    let mut mute_button = Button::new(
-        Vec2::new(0.05, 0.05),
-        Vec2::new(0.25, 0.15),
-        Some("Mute".to_string()),
-    );
+    let render_size = Vec2::new(640.0, 360.0);
+    let p = |x: f32, y: f32| Vec2::new(x * render_size.x, y * render_size.y);
+
+    let mut mute_button = Button::new(p(0.05, 0.05), p(0.25, 0.15), Some("Mute".to_string()));
     let mut icon = ImageStyle::stretched(1001);
     icon.draw_over_content = true;
     mute_button.set_background_image(icon);
     gui.add_button(mute_button, Tag::ToggleMute);
 
     let mut volume_slider = Slider::new(
-        Vec2::new(0.05, 0.3),
-        Vec2::new(0.9, 0.12),
-        0.04,
+        p(0.05, 0.3),
+        p(0.9, 0.12),
+        20.0,
         0.0,
         100.0,
         1.0,
@@ -42,9 +41,9 @@ fn main() {
     gui.add_slider(volume_slider, Tag::SetVolume);
     gui.add_vertical_slider(
         VerticalSlider::new(
-            Vec2::new(0.95, 0.05),
-            Vec2::new(0.03, 0.5),
-            0.05,
+            p(0.95, 0.05),
+            p(0.03, 0.5),
+            18.0,
             0.0,
             1.0,
             0.1,
@@ -56,9 +55,9 @@ fn main() {
     );
     gui.add_left_right_selector(
         LeftRightSelector::new(
-            Vec2::new(0.05, 0.48),
-            Vec2::new(0.6, 0.12),
-            0.08,
+            p(0.05, 0.48),
+            p(0.6, 0.12),
+            44.0,
             vec![
                 "Low".to_string(),
                 "Medium".to_string(),
@@ -71,8 +70,8 @@ fn main() {
     );
     gui.add_button_toggle(
         ButtonToggle::new(
-            Vec2::new(0.05, 0.64),
-            Vec2::new(0.4, 0.12),
+            p(0.05, 0.64),
+            p(0.4, 0.12),
             "VSync Off".to_string(),
             "VSync On".to_string(),
             false,
@@ -80,23 +79,14 @@ fn main() {
         Tag::SetVsync,
     );
     gui.add_move_and_resize_thumbs(
-        MoveAndResizeThumbs::new(
-            Vec2::new(0.03, 0.03),
-            Vec2::new(0.55, 0.58),
-            Vec2::new(0.2, 0.2),
-        ),
+        MoveAndResizeThumbs::new(p(0.03, 0.03), p(0.55, 0.58), p(0.2, 0.2)),
         Tag::ResizePanel,
     );
 
     let window_size = Vec2::new(1280.0, 720.0);
-    let render_size = Vec2::new(640.0, 360.0);
-    let normalized_mouse = Vec2::new(0.4, 0.35);
-    let transformed_mouse = transform_mouse_to_normalized_subsurface_coords(
-        normalized_mouse,
-        window_size,
-        Vec2::ZERO,
-        render_size,
-    );
+    let mouse_in_window = Vec2::new(512.0, 252.0);
+    let transformed_mouse =
+        transform_mouse_to_subsurface_coords(mouse_in_window, Vec2::ZERO, window_size, render_size);
 
     let pressed_events = gui.step(transformed_mouse, true);
     let released_events = gui.step(transformed_mouse, false);
@@ -105,7 +95,7 @@ fn main() {
     println!("released events: {:?}", released_events);
 
     let mut backend = CommandBufferBackend::default();
-    rshigg::draw_gui(&gui, &mut backend, render_size, &Theme::default());
+    rshigg::draw_gui(&gui, &mut backend, &Theme::default());
     backend.dump();
 }
 

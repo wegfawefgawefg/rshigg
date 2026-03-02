@@ -52,7 +52,10 @@ impl State {
         let drag_thumb = test_elements.drag_thumb;
         reposition_test_elements(&mut test_elements, &mut gui, drag_thumb);
 
-        let settings_window = SettingsWindow::new(Vec2::new(0.1, 0.1), Vec2::new(0.8, 0.8));
+        let settings_window = SettingsWindow::new(
+            Vec2::new(0.1 * DIMS.x as f32, 0.1 * DIMS.y as f32),
+            Vec2::new(0.8 * DIMS.x as f32, 0.8 * DIMS.y as f32),
+        );
         Self {
             running: true,
             time_since_last_update: 0.0,
@@ -70,10 +73,6 @@ pub fn process_events_and_input(rl: &mut RaylibHandle, state: &mut State) {
     }
 }
 
-pub fn normalize_coord(pos: Vec2) -> Vec2 {
-    Vec2::new(pos.x / DIMS.x as f32, pos.y / DIMS.y as f32)
-}
-
 pub fn reposition_test_elements(
     test_elements: &mut TestElements,
     gui: &mut Gui<Tag>,
@@ -86,7 +85,7 @@ pub fn reposition_test_elements(
     };
 
     let mut cursor = tl + Vec2::new(size.x, 0.0);
-    const DELTA: f32 = 0.1;
+    let delta = DIMS.y as f32 * 0.1;
 
     if let Some(mnmz_button) = gui.get_button_mut(test_elements.minimize_window_button) {
         mnmz_button.position = cursor;
@@ -99,17 +98,17 @@ pub fn reposition_test_elements(
     let mut cursor = tl + Vec2::new(0.0, size.y);
     if let Some(button) = gui.get_button_mut(test_elements.potato_button) {
         button.position = cursor;
-        cursor.y += DELTA;
+        cursor.y += delta;
     }
 
     if let Some(slider) = gui.get_slider_mut(test_elements.slider) {
         slider.position = cursor;
-        cursor.y += DELTA;
+        cursor.y += delta;
     }
 
     if let Some(slider) = gui.get_vertical_slider_mut(test_elements.vertical_slider) {
         slider.position = cursor;
-        cursor.y += DELTA;
+        cursor.y += delta;
     }
 }
 
@@ -149,13 +148,13 @@ pub fn handle_gui_events(state: &mut State, tagged_events: Vec<TaggedEvent<Tag>>
 
 pub fn step(rl: &mut RaylibHandle, state: &mut State) {
     let mouse_pos = rl.get_mouse_position();
-    let nmp = normalize_coord(Vec2::new(mouse_pos.x, mouse_pos.y));
+    let mp = Vec2::new(mouse_pos.x, mouse_pos.y);
     let mouse_pressed = rl.is_mouse_button_down(raylib::consts::MouseButton::MOUSE_LEFT_BUTTON);
 
-    let tagged_events = state.gui.step(nmp, mouse_pressed);
+    let tagged_events = state.gui.step(mp, mouse_pressed);
     handle_gui_events(state, tagged_events);
 
-    let _settings_window_events = state.settings_window.step(nmp, mouse_pressed);
+    let _settings_window_events = state.settings_window.step(mp, mouse_pressed);
 }
 
 pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
@@ -183,9 +182,8 @@ pub fn draw(state: &State, d: &mut RaylibTextureMode<RaylibDrawHandle>) {
         );
     }
 
-    let resolution = Vec2::new(DIMS.x as f32, DIMS.y as f32);
-    draw_gui(&state.gui, d, resolution);
-    draw_gui(&state.settings_window.gui, d, resolution);
+    draw_gui(&state.gui, d);
+    draw_gui(&state.settings_window.gui, d);
 
     // render the settings in the top left
     let list_items = vec![

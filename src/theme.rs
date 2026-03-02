@@ -34,64 +34,59 @@ impl Default for Theme {
     }
 }
 
-pub fn draw_gui<T: Clone + Copy, B: DrawBackend>(
-    gui: &Gui<T>,
-    backend: &mut B,
-    resolution: Vec2,
-    theme: &Theme,
-) {
+pub fn draw_gui<T: Clone + Copy, B: DrawBackend>(gui: &Gui<T>, backend: &mut B, theme: &Theme) {
     for label in &gui.labels {
         if !gui.is_visible(label.id) {
             continue;
         }
-        draw_label(backend, label, resolution, theme);
+        draw_label(backend, label, theme);
     }
     for button in &gui.buttons {
         if !gui.is_visible(button.id) {
             continue;
         }
-        draw_button(backend, button, resolution, theme);
+        draw_button(backend, button, theme);
     }
     for slider in &gui.sliders {
         if !gui.is_visible(slider.id) {
             continue;
         }
-        draw_slider(backend, slider, resolution, theme);
+        draw_slider(backend, slider, theme);
     }
     for slider in &gui.vertical_sliders {
         if !gui.is_visible(slider.id) {
             continue;
         }
-        draw_vertical_slider(backend, slider, resolution, theme);
+        draw_vertical_slider(backend, slider, theme);
     }
     for draggable in &gui.draggables {
         if !gui.is_visible(draggable.id) {
             continue;
         }
-        draw_draggable(backend, draggable, resolution, theme);
+        draw_draggable(backend, draggable, theme);
     }
     for selector in &gui.left_right_selectors {
         if !gui.is_visible(selector.id) {
             continue;
         }
-        draw_left_right_selector(backend, selector, resolution, theme);
+        draw_left_right_selector(backend, selector, theme);
     }
     for toggle in &gui.button_toggles {
         if !gui.is_visible(toggle.id) {
             continue;
         }
-        draw_button_toggle(backend, toggle, resolution, theme);
+        draw_button_toggle(backend, toggle, theme);
     }
     for thumbs in &gui.move_and_resize_thumbs {
         if !gui.is_visible(thumbs.id) {
             continue;
         }
-        draw_move_and_resize_thumbs(backend, thumbs, resolution, theme);
+        draw_move_and_resize_thumbs(backend, thumbs, theme);
     }
 }
 
-fn draw_label<B: DrawBackend>(backend: &mut B, label: &Label, resolution: Vec2, theme: &Theme) {
-    let rect = Rect::from_normalized(label.position, label.size, resolution);
+fn draw_label<B: DrawBackend>(backend: &mut B, label: &Label, theme: &Theme) {
+    let rect = Rect::new(label.position, label.size);
     if rect.size.x <= 0.0 || rect.size.y <= 0.0 {
         return;
     }
@@ -113,10 +108,9 @@ fn draw_label<B: DrawBackend>(backend: &mut B, label: &Label, resolution: Vec2, 
     }
 }
 
-fn draw_button<B: DrawBackend>(backend: &mut B, button: &Button, resolution: Vec2, theme: &Theme) {
+fn draw_button<B: DrawBackend>(backend: &mut B, button: &Button, theme: &Theme) {
     draw_button_visual(
         backend,
-        resolution,
         theme,
         button.position,
         button.size,
@@ -129,7 +123,6 @@ fn draw_button<B: DrawBackend>(backend: &mut B, button: &Button, resolution: Vec
 
 fn draw_button_visual<B: DrawBackend>(
     backend: &mut B,
-    resolution: Vec2,
     theme: &Theme,
     position: Vec2,
     size: Vec2,
@@ -138,7 +131,10 @@ fn draw_button_visual<B: DrawBackend>(
     pressed: bool,
     background_image: Option<ImageStyle>,
 ) {
-    let rect = Rect::from_normalized(position, size, resolution);
+    let rect = Rect::new(position, size);
+    if rect.size.x <= 0.0 || rect.size.y <= 0.0 {
+        return;
+    }
     draw_beveled_box(backend, rect, theme, hovered, pressed, theme.control_color);
 
     if let Some(image) = background_image {
@@ -169,8 +165,8 @@ fn draw_button_visual<B: DrawBackend>(
     }
 }
 
-fn draw_slider<B: DrawBackend>(backend: &mut B, slider: &Slider, resolution: Vec2, theme: &Theme) {
-    let body = Rect::from_normalized(slider.position, slider.size, resolution);
+fn draw_slider<B: DrawBackend>(backend: &mut B, slider: &Slider, theme: &Theme) {
+    let body = Rect::new(slider.position, slider.size);
     if body.size.x <= 0.0 || body.size.y <= 0.0 {
         return;
     }
@@ -180,10 +176,15 @@ fn draw_slider<B: DrawBackend>(backend: &mut B, slider: &Slider, resolution: Vec
         _ => backend.fill_rect(body, theme.track_color),
     }
 
-    let value_fraction = (slider.value - slider.minimum) / (slider.maximum - slider.minimum);
-    let rel_position_x = value_fraction * slider.size.x;
-    let thumb_x = body.position.x + rel_position_x * resolution.x;
-    let thumb_width = resolution.x * slider.thumb_width;
+    let range = (slider.maximum - slider.minimum).abs();
+    let value_fraction = if range <= f32::EPSILON {
+        0.0
+    } else {
+        ((slider.value - slider.minimum) / (slider.maximum - slider.minimum)).clamp(0.0, 1.0)
+    };
+
+    let thumb_x = body.position.x + value_fraction * body.size.x;
+    let thumb_width = slider.thumb_width.max(1.0);
     let thumb_rect = Rect::new(
         Vec2::new(thumb_x - thumb_width / 2.0, body.position.y),
         Vec2::new(thumb_width, body.size.y),
@@ -209,13 +210,8 @@ fn draw_slider<B: DrawBackend>(backend: &mut B, slider: &Slider, resolution: Vec
     }
 }
 
-fn draw_vertical_slider<B: DrawBackend>(
-    backend: &mut B,
-    slider: &VerticalSlider,
-    resolution: Vec2,
-    theme: &Theme,
-) {
-    let body = Rect::from_normalized(slider.position, slider.size, resolution);
+fn draw_vertical_slider<B: DrawBackend>(backend: &mut B, slider: &VerticalSlider, theme: &Theme) {
+    let body = Rect::new(slider.position, slider.size);
     if body.size.x <= 0.0 || body.size.y <= 0.0 {
         return;
     }
@@ -225,10 +221,15 @@ fn draw_vertical_slider<B: DrawBackend>(
         _ => backend.fill_rect(body, theme.track_color),
     }
 
-    let value_fraction = (slider.value - slider.minimum) / (slider.maximum - slider.minimum);
-    let rel_position_y = value_fraction * slider.size.y;
-    let thumb_y = body.position.y + rel_position_y * resolution.y;
-    let thumb_height = resolution.y * slider.thumb_height;
+    let range = (slider.maximum - slider.minimum).abs();
+    let value_fraction = if range <= f32::EPSILON {
+        0.0
+    } else {
+        ((slider.value - slider.minimum) / (slider.maximum - slider.minimum)).clamp(0.0, 1.0)
+    };
+
+    let thumb_y = body.position.y + value_fraction * body.size.y;
+    let thumb_height = slider.thumb_height.max(1.0);
     let thumb_rect = Rect::new(
         Vec2::new(body.position.x, thumb_y - thumb_height / 2.0),
         Vec2::new(body.size.x, thumb_height),
@@ -254,13 +255,8 @@ fn draw_vertical_slider<B: DrawBackend>(
     }
 }
 
-fn draw_draggable<B: DrawBackend>(
-    backend: &mut B,
-    draggable: &Draggable,
-    resolution: Vec2,
-    theme: &Theme,
-) {
-    let rect = Rect::from_normalized(draggable.position, draggable.size, resolution);
+fn draw_draggable<B: DrawBackend>(backend: &mut B, draggable: &Draggable, theme: &Theme) {
+    let rect = Rect::new(draggable.position, draggable.size);
     if rect.size.x <= 0.0 || rect.size.y <= 0.0 {
         return;
     }
@@ -314,21 +310,17 @@ fn draw_draggable<B: DrawBackend>(
 fn draw_left_right_selector<B: DrawBackend>(
     backend: &mut B,
     selector: &LeftRightSelector,
-    resolution: Vec2,
     theme: &Theme,
 ) {
-    let rect = Rect::from_normalized(selector.position, selector.size, resolution);
-    let center_position = rect.position + Vec2::new(selector.button_width * resolution.x, 0.0);
-    let center_size = Vec2::new(
-        rect.size.x - selector.button_width * resolution.x * 2.0,
-        rect.size.y,
-    );
+    let rect = Rect::new(selector.position, selector.size);
+    let center_position = rect.position + Vec2::new(selector.button_width, 0.0);
+    let center_size = Vec2::new(rect.size.x - selector.button_width * 2.0, rect.size.y);
     if center_size.x > 0.0 {
         backend.fill_rect(Rect::new(center_position, center_size), theme.track_color);
     }
 
-    draw_button(backend, &selector.left_button, resolution, theme);
-    draw_button(backend, &selector.right_button, resolution, theme);
+    draw_button(backend, &selector.left_button, theme);
+    draw_button(backend, &selector.right_button, theme);
 
     if let Some(selected) = selector.selected_option() {
         let text_pos = center_position + Vec2::new(6.0, 4.0);
@@ -336,15 +328,9 @@ fn draw_left_right_selector<B: DrawBackend>(
     }
 }
 
-fn draw_button_toggle<B: DrawBackend>(
-    backend: &mut B,
-    toggle: &ButtonToggle,
-    resolution: Vec2,
-    theme: &Theme,
-) {
+fn draw_button_toggle<B: DrawBackend>(backend: &mut B, toggle: &ButtonToggle, theme: &Theme) {
     draw_button_visual(
         backend,
-        resolution,
         theme,
         toggle.left_button.position,
         toggle.left_button.size,
@@ -355,7 +341,6 @@ fn draw_button_toggle<B: DrawBackend>(
     );
     draw_button_visual(
         backend,
-        resolution,
         theme,
         toggle.right_button.position,
         toggle.right_button.size,
@@ -369,11 +354,10 @@ fn draw_button_toggle<B: DrawBackend>(
 fn draw_move_and_resize_thumbs<B: DrawBackend>(
     backend: &mut B,
     thumbs: &MoveAndResizeThumbs,
-    resolution: Vec2,
     theme: &Theme,
 ) {
-    draw_draggable(backend, &thumbs.move_thumb, resolution, theme);
-    draw_draggable(backend, &thumbs.resize_thumb, resolution, theme);
+    draw_draggable(backend, &thumbs.move_thumb, theme);
+    draw_draggable(backend, &thumbs.resize_thumb, theme);
 }
 
 fn draw_beveled_box<B: DrawBackend>(

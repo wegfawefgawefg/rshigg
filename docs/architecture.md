@@ -26,8 +26,9 @@ RShiGG is organized into four layers:
 Per frame:
 
 1. Application updates widget positions/sizes/values as needed.
-2. `Gui::step(mouse_pos, mouse_pressed)` or `Gui::step_pixels(mouse_px, resolution_px, mouse_pressed)` advances interaction state and returns `Vec<TaggedEvent<TTag>>`.
-3. `draw_gui(gui, backend, resolution, theme)` renders the same GUI through the theme.
+2. `Gui::step(mouse_pos_px, mouse_pressed)` advances interaction state and returns `Vec<TaggedEvent<TTag>>`.
+3. `Gui::step_in_rect(...)` is available when input comes from a sub-rectangle/scaled surface.
+4. `draw_gui(gui, backend, theme)` renders the same GUI through the theme.
 
 This is retained-state UI with immediate-style usage patterns in the app loop.
 
@@ -102,7 +103,7 @@ Rendering:
 
 Utilities:
 
-- `transform_mouse_to_normalized_subsurface_coords(...)`
+- `transform_mouse_to_subsurface_coords(...)`
 
 ## Differences from Python `shigg`
 

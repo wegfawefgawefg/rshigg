@@ -52,10 +52,10 @@ fn process_input(rl: &mut RaylibHandle, state: &mut DemoState) {
 
 fn step(rl: &mut RaylibHandle, state: &mut DemoState) {
     let mouse = rl.get_mouse_position();
-    let nmp = glam::Vec2::new(mouse.x / DIMS.x as f32, mouse.y / DIMS.y as f32);
+    let mp = glam::Vec2::new(mouse.x, mouse.y);
     let mouse_pressed = rl.is_mouse_button_down(MouseButton::MOUSE_LEFT_BUTTON);
 
-    let main_events = state.main_gui.step(nmp, mouse_pressed);
+    let main_events = state.main_gui.step(mp, mouse_pressed);
     handle_main_events(state, main_events);
 
     if state.settings_open {
@@ -77,7 +77,7 @@ fn step(rl: &mut RaylibHandle, state: &mut DemoState) {
             }
         }
 
-        let settings_events = state.settings_gui.step(nmp, mouse_pressed);
+        let settings_events = state.settings_gui.step(mp, mouse_pressed);
         handle_settings_events(state, settings_events);
     }
 }

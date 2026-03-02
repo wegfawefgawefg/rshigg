@@ -45,7 +45,7 @@ impl MoveAndResizeThumbs {
         }
 
         if matches!(resize_event, Some(Event::DraggableMoved { .. })) {
-            let min_size = Vec2::new(0.01, 0.01);
+            let min_size = self.thumb_size.max(Vec2::new(1.0, 1.0));
             let mut new_size = self.resize_thumb.position - self.target_position;
             new_size.x = new_size.x.max(min_size.x);
             new_size.y = new_size.y.max(min_size.y);

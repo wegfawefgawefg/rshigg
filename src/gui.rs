@@ -232,29 +232,7 @@ impl<T: Clone + Copy> Gui<T> {
             .find(|thumbs| thumbs.id == id)
     }
 
-    ///Step the gui, and all elements within.
-    /// Mouse position should ideally be normalized between [0.0, 1.0].
-    /// Values outside the range [0.0, 1.0] can be treated as outside the gui rect.
-    /// This isnt required but will make things a whole lot easier for you.
-    pub fn step_pixels(
-        &mut self,
-        mouse_position_pixels: Vec2,
-        resolution_pixels: Vec2,
-        mouse_pressed: bool,
-    ) -> Vec<TaggedEvent<T>> {
-        let normalized_mouse = if resolution_pixels.x > 0.0 && resolution_pixels.y > 0.0 {
-            Vec2::new(
-                mouse_position_pixels.x / resolution_pixels.x,
-                mouse_position_pixels.y / resolution_pixels.y,
-            )
-        } else {
-            // Force out-of-bounds if resolution is invalid.
-            Vec2::new(-1.0, -1.0)
-        };
-        self.step(normalized_mouse, mouse_pressed)
-    }
-
-    ///Step using normalized mouse coordinates.
+    /// Step the gui using mouse coordinates in this gui's pixel space.
     pub fn step(&mut self, mouse_position: Vec2, mouse_pressed: bool) -> Vec<TaggedEvent<T>> {
         let mut tagged_events = Vec::new();
         for button in self.buttons.iter_mut() {
@@ -356,6 +334,35 @@ impl<T: Clone + Copy> Gui<T> {
             }
         }
         tagged_events
+    }
+
+    /// Step gui from a sub-rectangle in another surface.
+    ///
+    /// - `mouse_position_surface`: mouse position in the parent surface (pixels)
+    /// - `subsurface_position`: top-left of the gui rectangle in that parent surface (pixels)
+    /// - `subsurface_size`: size of the gui rectangle in the parent surface (pixels)
+    /// - `gui_size`: logical pixel size used by this gui
+    pub fn step_in_rect(
+        &mut self,
+        mouse_position_surface: Vec2,
+        subsurface_position: Vec2,
+        subsurface_size: Vec2,
+        gui_size: Vec2,
+        mouse_pressed: bool,
+    ) -> Vec<TaggedEvent<T>> {
+        if subsurface_size.x <= 0.0
+            || subsurface_size.y <= 0.0
+            || gui_size.x <= 0.0
+            || gui_size.y <= 0.0
+        {
+            return self.step(Vec2::new(-1.0, -1.0), mouse_pressed);
+        }
+        let local_surface = mouse_position_surface - subsurface_position;
+        let gui_mouse = Vec2::new(
+            local_surface.x * gui_size.x / subsurface_size.x,
+            local_surface.y * gui_size.y / subsurface_size.y,
+        );
+        self.step(gui_mouse, mouse_pressed)
     }
 }
 

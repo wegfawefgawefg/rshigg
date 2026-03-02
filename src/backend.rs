@@ -38,13 +38,6 @@ impl Rect {
     pub fn new(position: Vec2, size: Vec2) -> Self {
         Self { position, size }
     }
-
-    pub fn from_normalized(position: Vec2, size: Vec2, resolution: Vec2) -> Self {
-        Self {
-            position: position * resolution,
-            size: size * resolution,
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -16,6 +16,10 @@ use raylib_skin::{
 const WINDOW_DIMS: UVec2 = UVec2::new(1280, 720);
 const DIMS: UVec2 = WINDOW_DIMS;
 
+fn p(x: f32, y: f32) -> Vec2 {
+    Vec2::new(x * DIMS.x as f32, y * DIMS.y as f32)
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 enum Tag {
     Ability,
@@ -36,14 +40,14 @@ impl State {
         let mut gui = Gui::new();
 
         // Main panel background.
-        let mut panel_bg = Label::new(Vec2::new(0.13, 0.14), Vec2::new(0.74, 0.72), None);
+        let mut panel_bg = Label::new(p(0.13, 0.14), p(0.74, 0.72), None);
         let mut panel_img = ImageStyle::tiled(IMG_AURORA_TILE);
         panel_img.tint = UiColor::rgba(98, 120, 172, 82);
         panel_bg.set_background_image(panel_img);
         gui.add_label(panel_bg);
 
         // Soft frame overlay for subtle texture.
-        let mut frame_overlay = Label::new(Vec2::new(0.14, 0.15), Vec2::new(0.72, 0.70), None);
+        let mut frame_overlay = Label::new(p(0.14, 0.15), p(0.72, 0.70), None);
         let mut frame_img = ImageStyle::tiled(IMG_SOFT_NOISE);
         frame_img.tint = UiColor::rgba(212, 224, 255, 46);
         frame_img.draw_over_content = true;
@@ -51,20 +55,20 @@ impl State {
         gui.add_label(frame_overlay);
 
         let help = Label::new(
-            Vec2::new(0.16, 0.18),
-            Vec2::new(0.52, 0.05),
+            p(0.16, 0.18),
+            p(0.52, 0.05),
             Some("Choose an ability set and adjust overdrive.".to_string()),
         );
         gui.add_label(help);
 
-        let mut portrait = Label::new(Vec2::new(0.16, 0.30), Vec2::new(0.11, 0.15), None);
+        let mut portrait = Label::new(p(0.16, 0.30), p(0.11, 0.15), None);
         portrait.set_background_image(ImageStyle::stretched(IMG_PORTRAIT));
         gui.add_label(portrait);
 
         let mut ability_selector = LeftRightSelector::new(
-            Vec2::new(0.30, 0.30),
-            Vec2::new(0.50, 0.07),
-            0.08,
+            p(0.30, 0.30),
+            p(0.50, 0.07),
+            p(0.08, 0.0).x,
             vec![
                 "Special Attack".to_string(),
                 "Meteor Strike".to_string(),
@@ -76,8 +80,8 @@ impl State {
         gui.add_left_right_selector(ability_selector, Tag::Ability);
 
         let mut overdrive_label = Label::new(
-            Vec2::new(0.30, 0.385),
-            Vec2::new(0.24, 0.045),
+            p(0.30, 0.385),
+            p(0.24, 0.045),
             Some("Overdrive".to_string()),
         );
         let mut overdrive_lbl_bg = ImageStyle::tiled(IMG_AURORA_TILE);
@@ -86,9 +90,9 @@ impl State {
         gui.add_label(overdrive_label);
 
         let mut overdrive_slider = Slider::new(
-            Vec2::new(0.30, 0.43),
-            Vec2::new(0.50, 0.05),
-            0.04,
+            p(0.30, 0.43),
+            p(0.50, 0.05),
+            24.0,
             0.0,
             100.0,
             1.0,
@@ -106,8 +110,8 @@ impl State {
         gui.add_slider(overdrive_slider, Tag::Overdrive);
 
         let mut auto_toggle = ButtonToggle::new(
-            Vec2::new(0.30, 0.50),
-            Vec2::new(0.30, 0.06),
+            p(0.30, 0.50),
+            p(0.30, 0.06),
             "Manual".to_string(),
             "Auto".to_string(),
             true,
@@ -140,18 +144,14 @@ impl State {
         }
 
         let mut display_button = Button::new(
-            Vec2::new(0.46, 0.82),
-            Vec2::new(0.24, 0.065),
+            p(0.46, 0.82),
+            p(0.24, 0.065),
             Some("Display Abilities".to_string()),
         );
         style_button_with_texture(&mut display_button);
         gui.add_button(display_button, Tag::DisplayAbilities);
 
-        let mut back_button = Button::new(
-            Vec2::new(0.72, 0.82),
-            Vec2::new(0.11, 0.065),
-            Some("Back".to_string()),
-        );
+        let mut back_button = Button::new(p(0.72, 0.82), p(0.11, 0.065), Some("Back".to_string()));
         style_button_with_texture(&mut back_button);
         gui.add_button(back_button, Tag::Back);
 
@@ -175,27 +175,19 @@ fn style_selector_buttons(selector: &mut LeftRightSelector) {
 }
 
 fn add_stat_row(gui: &mut Gui<Tag>, x: f32, y: f32, name: &str, value: i32, icon_id: u64) {
-    let mut icon = Label::new(Vec2::new(x, y), Vec2::new(0.028, 0.042), None);
+    let mut icon = Label::new(p(x, y), p(0.028, 0.042), None);
     let mut icon_img = ImageStyle::centered(icon_id);
     icon_img.tint = UiColor::rgba(220, 230, 255, 180);
     icon.set_background_image(icon_img);
     gui.add_label(icon);
 
-    let mut name_label = Label::new(
-        Vec2::new(x + 0.03, y),
-        Vec2::new(0.16, 0.042),
-        Some(name.to_string()),
-    );
+    let mut name_label = Label::new(p(x + 0.03, y), p(0.16, 0.042), Some(name.to_string()));
     let mut name_bg = ImageStyle::tiled(IMG_AURORA_TILE);
     name_bg.tint = UiColor::rgba(142, 162, 220, 78);
     name_label.set_background_image(name_bg);
     gui.add_label(name_label);
 
-    let mut value_label = Label::new(
-        Vec2::new(x + 0.19, y),
-        Vec2::new(0.05, 0.042),
-        Some(format!("{}", value)),
-    );
+    let mut value_label = Label::new(p(x + 0.19, y), p(0.05, 0.042), Some(format!("{}", value)));
     let mut value_bg = ImageStyle::tiled(IMG_AURORA_TILE);
     value_bg.tint = UiColor::rgba(100, 120, 182, 130);
     value_label.set_background_image(value_bg);
@@ -225,10 +217,7 @@ fn main() {
 
         let mouse = rl.get_mouse_position();
         let mouse_pressed = rl.is_mouse_button_down(MouseButton::MOUSE_LEFT_BUTTON);
-        let events =
-            state
-                .gui
-                .step_pixels(Vec2::new(mouse.x, mouse.y), DIMS.as_vec2(), mouse_pressed);
+        let events = state.gui.step(Vec2::new(mouse.x, mouse.y), mouse_pressed);
         handle_events(&mut state, events);
 
         let mut d = rl.begin_drawing(&rlt);
@@ -248,7 +237,7 @@ fn main() {
                 font_size_px: 24.0,
             };
             let mut backend = SkinRaylibBackend::new(low_res_d, &skins);
-            rshigg::draw_gui(&state.gui, &mut backend, DIMS.as_vec2(), &theme);
+            rshigg::draw_gui(&state.gui, &mut backend, &theme);
         }
         scale_and_blit_render_texture_to_window(&mut d, &mut render_texture);
     }
