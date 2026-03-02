@@ -2,6 +2,8 @@
 
 Rust implementation of ShiGG: a compact, game-oriented GUI library.
 
+Status: usable today for small projects and demos, but not complete yet.
+
 ## Current Status
 
 - Core widget logic is backend-agnostic.
@@ -128,6 +130,7 @@ Theme/widget rendering lives in `rshigg::draw_gui(...)`, which maps widgets to t
 See:
 
 - `docs/architecture.md`
+- `docs/design_decisions_and_refactors.md`
 
 It documents:
 
