@@ -16,7 +16,6 @@ pub enum Tag {
     MoveAndResizePreview,
     RowButton(usize),
     RowSlider(usize),
-    RowVerticalSlider(usize),
     RowSelector(usize),
     RowToggle(usize),
 }
@@ -25,7 +24,6 @@ pub enum Tag {
 pub enum RowControl {
     Button(u32),
     Slider(u32),
-    VerticalSlider(u32),
     LeftRightSelector(u32),
     ButtonToggle(u32),
 }
@@ -43,6 +41,7 @@ pub struct DemoState {
     pub settings_pos: Vec2,
     pub settings_size: Vec2,
     pub rows: Vec<Row>,
+    pub open_settings_button_id: u32,
     pub scroll_value: f32,
     pub scroll_slider_id: u32,
     pub move_window_id: u32,
@@ -61,6 +60,7 @@ impl DemoState {
             Vec2::new(0.14, 0.07),
             Some("Settings".to_string()),
         );
+        let open_settings_button_id = open_button.id;
         main_gui.add_button(open_button, Tag::OpenSettings);
 
         let preview_pos = Vec2::new(0.58, 0.18);
@@ -109,15 +109,16 @@ impl DemoState {
             let label_id = label.id;
             settings_gui.add_label(label);
 
-            let control = match i % 5 {
+            let control = match i % 4 {
                 0 => {
-                    let button = Button::new(Vec2::ZERO, Vec2::ZERO, Some("Apply".to_string()));
+                    let mut button = Button::new(Vec2::ZERO, Vec2::ZERO, Some("Apply".to_string()));
+                    button.set_background_image(rshigg::ImageStyle::stretched(10_000 + i as u64));
                     let id = button.id;
                     settings_gui.add_button(button, Tag::RowButton(i));
                     RowControl::Button(id)
                 }
                 1 => {
-                    let slider = Slider::new(
+                    let mut slider = Slider::new(
                         Vec2::ZERO,
                         Vec2::ZERO,
                         0.02,
@@ -128,28 +129,14 @@ impl DemoState {
                         0.0,
                         Some("Slider".to_string()),
                     );
+                    slider.set_track_image(rshigg::ImageStyle::tiled(20_000 + i as u64));
+                    slider.set_thumb_image(rshigg::ImageStyle::centered(30_000 + i as u64));
                     let id = slider.id;
                     settings_gui.add_slider(slider, Tag::RowSlider(i));
                     RowControl::Slider(id)
                 }
                 2 => {
-                    let slider = VerticalSlider::new(
-                        Vec2::ZERO,
-                        Vec2::ZERO,
-                        0.04,
-                        0.0,
-                        100.0,
-                        1.0,
-                        20.0,
-                        0.0,
-                        Some("V".to_string()),
-                    );
-                    let id = slider.id;
-                    settings_gui.add_vertical_slider(slider, Tag::RowVerticalSlider(i));
-                    RowControl::VerticalSlider(id)
-                }
-                3 => {
-                    let selector = LeftRightSelector::new(
+                    let mut selector = LeftRightSelector::new(
                         Vec2::ZERO,
                         Vec2::ZERO,
                         0.04,
@@ -161,18 +148,30 @@ impl DemoState {
                         ],
                         1,
                     );
+                    selector
+                        .left_button
+                        .set_background_image(rshigg::ImageStyle::stretched(40_000 + i as u64));
+                    selector
+                        .right_button
+                        .set_background_image(rshigg::ImageStyle::stretched(50_000 + i as u64));
                     let id = selector.id;
                     settings_gui.add_left_right_selector(selector, Tag::RowSelector(i));
                     RowControl::LeftRightSelector(id)
                 }
                 _ => {
-                    let toggle = ButtonToggle::new(
+                    let mut toggle = ButtonToggle::new(
                         Vec2::ZERO,
                         Vec2::ZERO,
                         "Off".to_string(),
                         "On".to_string(),
                         i % 2 == 0,
                     );
+                    toggle
+                        .left_button
+                        .set_background_image(rshigg::ImageStyle::stretched(60_000 + i as u64));
+                    let mut right_image = rshigg::ImageStyle::stretched(70_000 + i as u64);
+                    right_image.draw_over_content = true;
+                    toggle.right_button.set_background_image(right_image);
                     let id = toggle.id;
                     settings_gui.add_button_toggle(toggle, Tag::RowToggle(i));
                     RowControl::ButtonToggle(id)
@@ -190,6 +189,7 @@ impl DemoState {
             settings_pos,
             settings_size,
             rows,
+            open_settings_button_id,
             scroll_value: 0.0,
             scroll_slider_id,
             move_window_id,
@@ -197,6 +197,7 @@ impl DemoState {
             preview_rect_pos: preview_pos,
             preview_rect_size: preview_size,
         };
+        sync_main_visibility(&mut state);
         layout_settings(&mut state);
         state
     }
@@ -205,7 +206,10 @@ impl DemoState {
 pub fn handle_main_events(state: &mut DemoState, events: Vec<TaggedEvent<Tag>>) {
     for tagged in events {
         match (tagged.tag, tagged.event) {
-            (Tag::OpenSettings, Event::ButtonReleased) => state.settings_open = true,
+            (Tag::OpenSettings, Event::ButtonReleased) => {
+                state.settings_open = true;
+                sync_main_visibility(state);
+            }
             (
                 Tag::MoveAndResizePreview,
                 Event::MoveAndResizeThumbsChanged {
@@ -224,7 +228,10 @@ pub fn handle_main_events(state: &mut DemoState, events: Vec<TaggedEvent<Tag>>) 
 pub fn handle_settings_events(state: &mut DemoState, events: Vec<TaggedEvent<Tag>>) {
     for tagged in events {
         match (tagged.tag, tagged.event) {
-            (Tag::CloseSettings, Event::ButtonReleased) => state.settings_open = false,
+            (Tag::CloseSettings, Event::ButtonReleased) => {
+                state.settings_open = false;
+                sync_main_visibility(state);
+            }
             (Tag::MoveWindow, Event::DraggableMoved { new_pos }) => {
                 state.settings_pos = new_pos;
                 layout_settings(state);
@@ -236,9 +243,6 @@ pub fn handle_settings_events(state: &mut DemoState, events: Vec<TaggedEvent<Tag
             (Tag::RowButton(idx), Event::ButtonReleased) => println!("row button {idx} released"),
             (Tag::RowSlider(idx), Event::SliderMoved { value }) => {
                 println!("row slider {idx} => {value}")
-            }
-            (Tag::RowVerticalSlider(idx), Event::SliderMoved { value }) => {
-                println!("row vertical slider {idx} => {value}")
             }
             (
                 Tag::RowSelector(idx),
@@ -312,74 +316,66 @@ pub fn layout_settings(state: &mut DemoState) {
     for (i, row) in state.rows.iter().enumerate() {
         let y = viewport_top + i as f32 * row_stride - state.scroll_value;
         let visible = y + row_h >= viewport_top && y <= viewport_bottom;
-
-        if let Some(label) = state.settings_gui.get_label_mut(row.label_id) {
-            if visible {
+        state.settings_gui.set_visible(row.label_id, visible);
+        if visible {
+            if let Some(label) = state.settings_gui.get_label_mut(row.label_id) {
                 label.position = Vec2::new(pos.x + padding, y);
                 label.size = Vec2::new(label_w, row_h);
-            } else {
-                label.position = Vec2::new(-10.0, -10.0);
-                label.size = Vec2::ZERO;
             }
         }
 
         let control_pos = Vec2::new(pos.x + padding + label_w + padding, y);
         match row.control {
             RowControl::Button(id) => {
+                state.settings_gui.set_visible(id, visible);
                 if let Some(control) = state.settings_gui.get_button_mut(id) {
                     if visible {
                         control.position = control_pos;
                         control.size = Vec2::new(control_w, row_h);
-                    } else {
-                        control.position = Vec2::new(-10.0, -10.0);
-                        control.size = Vec2::ZERO;
                     }
                 }
             }
             RowControl::Slider(id) => {
+                state.settings_gui.set_visible(id, visible);
                 if let Some(control) = state.settings_gui.get_slider_mut(id) {
                     if visible {
                         control.position = control_pos;
                         control.size = Vec2::new(control_w, row_h);
-                    } else {
-                        control.position = Vec2::new(-10.0, -10.0);
-                        control.size = Vec2::ZERO;
-                    }
-                }
-            }
-            RowControl::VerticalSlider(id) => {
-                if let Some(control) = state.settings_gui.get_vertical_slider_mut(id) {
-                    if visible {
-                        control.position = control_pos;
-                        control.size = Vec2::new(control_w * 0.2, row_h);
-                    } else {
-                        control.position = Vec2::new(-10.0, -10.0);
-                        control.size = Vec2::ZERO;
                     }
                 }
             }
             RowControl::LeftRightSelector(id) => {
+                state.settings_gui.set_visible(id, visible);
                 if let Some(control) = state.settings_gui.get_left_right_selector_mut(id) {
                     if visible {
                         control.set_position(control_pos);
                         control.set_size(Vec2::new(control_w, row_h));
-                    } else {
-                        control.set_position(Vec2::new(-10.0, -10.0));
-                        control.set_size(Vec2::ZERO);
                     }
                 }
             }
             RowControl::ButtonToggle(id) => {
+                state.settings_gui.set_visible(id, visible);
                 if let Some(control) = state.settings_gui.get_button_toggle_mut(id) {
                     if visible {
                         control.set_position(control_pos);
                         control.set_size(Vec2::new(control_w, row_h));
-                    } else {
-                        control.set_position(Vec2::new(-10.0, -10.0));
-                        control.set_size(Vec2::ZERO);
                     }
                 }
             }
         }
     }
+}
+
+pub fn settings_scroll_clip_rect(state: &DemoState) -> rshigg::Rect {
+    let pos = state.settings_pos;
+    let size = state.settings_size;
+    let clip_pos = pos;
+    let clip_size = size;
+    rshigg::Rect::new(clip_pos * DIMS.as_vec2(), clip_size * DIMS.as_vec2())
+}
+
+fn sync_main_visibility(state: &mut DemoState) {
+    state
+        .main_gui
+        .set_visible(state.open_settings_button_id, !state.settings_open);
 }

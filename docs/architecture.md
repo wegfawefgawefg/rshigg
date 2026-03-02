@@ -2,103 +2,117 @@
 
 ## Purpose
 
-This document defines the post-refactor direction for RShiGG and records how it intentionally diverges from the original Python `shigg`.
+This document defines current RShiGG architecture after the backend/theme refactor and records how it diverges from Python `shigg`.
 
-## Scope
+## Design Goals
 
-RShiGG is split into:
+1. Keep the core crate backend-agnostic.
+2. Keep backend integration minimal.
+3. Keep widget state simple and explicit.
+4. Let themes map widgets to low-level primitives.
+5. Make demos show real multi-backend extensibility.
 
-1. Core interaction/state engine (backend-agnostic)
-2. Rendering abstraction (`DrawBackend`)
-3. Theme renderer (`draw_gui`) that maps widgets to draw primitives
-4. Backend adapters (raylib example today, more later)
+## System Split
 
-## Core Rules
+RShiGG is organized into four layers:
 
-1. Core crate must not depend on a graphics backend.
-2. Widget logic and event generation must remain deterministic from input state.
-3. Rendering must happen through low-level primitives, not widget-specific backend hooks.
+1. Interaction/state (`Gui<TTag>` + widgets + events)
+2. Backend primitive API (`DrawBackend`)
+3. Theme renderer (`draw_gui`) that turns widgets into primitives
+4. Backend adapters/examples (raylib, command-buffer style custom backend)
 
-## Why a Tiny Backend Trait
+## Frame Model
 
-A small trait is stable and easy for users to implement:
+Per frame:
+
+1. Application updates widget positions/sizes/values as needed.
+2. `Gui::step(mouse_pos, mouse_pressed)` advances interaction state and returns `Vec<TaggedEvent<TTag>>`.
+3. `draw_gui(gui, backend, resolution, theme)` renders the same GUI through the theme.
+
+This is retained-state UI with immediate-style usage patterns in the app loop.
+
+## Visibility Model (No Per-Widget Hidden Field)
+
+Visibility lives in `Gui`, not inside each widget type:
+
+- `Gui::set_visible(id, bool)`
+- `Gui::is_visible(id) -> bool`
+
+`Gui` tracks hidden IDs and skips hidden elements during `step`.  
+`draw_gui` also checks `is_visible` and skips rendering hidden elements.
+
+This keeps widget structs lean while still supporting culling/layout control.
+
+## Backend Trait
+
+Required low-level primitives:
 
 - `fill_rect`
 - `draw_line`
 - `draw_text`
 
-This keeps backend integration simple for raylib, SDL2, macroquad, engine-native wrappers, or headless command buffers.
+Optional extension hooks (default no-op):
 
-## Theme Layer
+- `push_clip_rect`
+- `pop_clip_rect`
+- `draw_image`
 
-`rshigg::draw_gui(gui, backend, resolution, theme)` owns the mapping:
+The optional methods keep the trait small for minimal backends while enabling clipping and textured styling where available.
 
-- button -> bevel rectangles + text
-- slider -> track + thumb
-- draggable -> bevel + grip lines
-- label -> text box
+## Theme + Image Styling
 
-Backends only execute primitives. Theme decisions stay centralized.
+`Theme` owns widget look; backend only executes primitives.
 
-## Public API Direction
+Widgets can optionally provide image styles:
 
-### Stable Core Types
+- `Button`, `Label`, `Draggable`: `background_image`
+- `Slider`, `VerticalSlider`: `track_image`, `thumb_image`
+
+`ImageStyle` fields:
+
+- `image_id` (backend-defined texture/sprite handle key)
+- `layout` (`Stretch`, `Tile`, `Center`)
+- `tint`
+- `draw_over_content` (under/over content control)
+
+Backends interpret `image_id` mapping. The core crate does not load/manage textures.
+
+## Clipping Strategy
+
+RShiGG uses explicit clip stack calls on the backend (`push_clip_rect`/`pop_clip_rect`) where needed (for example, scroll regions in demos), inspired by the same general pattern used in ImGui draw lists.
+
+## Public API Surface
+
+Core:
 
 - `Gui<TTag>`
-- widgets:
-  - `Button`
-  - `Slider`
-  - `VerticalSlider`
-  - `Draggable`
-  - `Label`
-  - `LeftRightSelector`
-  - `ButtonToggle`
-  - `MoveAndResizeThumbs`
+- widgets: `Button`, `Slider`, `VerticalSlider`, `Draggable`, `Label`, `LeftRightSelector`, `ButtonToggle`, `MoveAndResizeThumbs`
 - events: `Event`, `TaggedEvent<TTag>`
 
-### Stable Render Types
+Rendering:
 
 - `DrawBackend`
 - `Rect`
 - `Color`
+- `ImageStyle`, `ImageLayout`
 - `Theme`
 - `draw_gui(...)`
 
-### Utility
+Utilities:
 
 - `transform_mouse_to_normalized_subsurface_coords(...)`
 
-## Differences from Python ShiGG
+## Differences from Python `shigg`
 
-1. Rust API is explicit and typed (`Gui<Tag>` + enum tags).
-2. Rendering is no longer tied to pygame-style code paths.
-3. Event queue model is simplified as frame-returned vectors from `Gui::step`.
-4. Composite widgets are first-class elements and render through the same theme/backend path.
-
-## Backend Strategy
-
-Current:
-
-- Raylib adapter in `examples/basic/draw.rs`
-- Headless/custom adapter in `examples/custom_backend.rs`
-- Full UI demo in `examples/full_demo.rs`
-
-Planned:
-
-1. `rshigg-raylib` helper crate (optional)
-2. `rshigg-sdl2` helper crate
-3. dedicated input adapters per backend (mouse + wheel + key mapping helpers)
-
-## Porting Roadmap (Short Term)
-
-1. Improve clipping/viewport behavior for large scroll containers.
-2. Add optional helper crates for concrete backends (`rshigg-raylib`, `rshigg-sdl2`).
-3. Add additional docs/examples for style customization.
-4. Add API docs and compile-tested code snippets.
+1. Strongly typed tags/events (`Gui<Tag>`).
+2. Backend/theme split is explicit and reusable.
+3. Rendering is primitive-based, not backend-specific widget code paths.
+4. Visibility/culling is centralized at `Gui` level.
+5. Image styling is optional and backend-defined.
 
 ## Guardrails
 
 1. Keep core backend-independent.
-2. Keep backend trait minimal.
-3. Keep theme behavior composable and overridable.
-4. Prefer additive changes over breaking signatures unless unavoidable.
+2. Prefer additive API changes.
+3. Keep default backend trait implementation easy to satisfy.
+4. Keep widget types focused on interaction data, not renderer internals.

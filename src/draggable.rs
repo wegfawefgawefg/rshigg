@@ -2,7 +2,7 @@ use std::sync::atomic::Ordering;
 
 use glam::Vec2;
 
-use super::{Event, ELEMENT_NEXT_ID};
+use super::{Event, ImageStyle, ELEMENT_NEXT_ID};
 
 pub struct Draggable {
     pub id: u32,
@@ -10,6 +10,7 @@ pub struct Draggable {
     pub size: Vec2,
 
     pub label: Option<String>,
+    pub background_image: Option<ImageStyle>,
 
     pub hovered: bool,
     pub being_dragged: bool,
@@ -27,6 +28,7 @@ impl Draggable {
             size,
 
             label,
+            background_image: None,
 
             hovered: false,
             being_dragged: false,
@@ -34,6 +36,10 @@ impl Draggable {
             was_pre_hovered: false,
             pre_hover_countdown: 0,
         }
+    }
+
+    pub fn set_background_image(&mut self, image: ImageStyle) {
+        self.background_image = Some(image);
     }
 
     pub fn step(&mut self, mouse_position: Vec2, mouse_pressed: bool) -> Option<Event> {

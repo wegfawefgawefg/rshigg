@@ -47,8 +47,57 @@ impl Rect {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ImageLayout {
+    Stretch,
+    Tile,
+    Center,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ImageStyle {
+    pub image_id: u64,
+    pub layout: ImageLayout,
+    pub tint: Color,
+    pub draw_over_content: bool,
+}
+
+impl ImageStyle {
+    pub fn stretched(image_id: u64) -> Self {
+        Self {
+            image_id,
+            layout: ImageLayout::Stretch,
+            tint: Color::rgb(255, 255, 255),
+            draw_over_content: false,
+        }
+    }
+
+    pub fn tiled(image_id: u64) -> Self {
+        Self {
+            image_id,
+            layout: ImageLayout::Tile,
+            tint: Color::rgb(255, 255, 255),
+            draw_over_content: false,
+        }
+    }
+
+    pub fn centered(image_id: u64) -> Self {
+        Self {
+            image_id,
+            layout: ImageLayout::Center,
+            tint: Color::rgb(255, 255, 255),
+            draw_over_content: false,
+        }
+    }
+}
+
 pub trait DrawBackend {
     fn fill_rect(&mut self, rect: Rect, color: Color);
     fn draw_line(&mut self, start: Vec2, end: Vec2, color: Color, thickness: f32);
     fn draw_text(&mut self, text: &str, position: Vec2, font_size: f32, color: Color);
+
+    fn push_clip_rect(&mut self, _rect: Rect) {}
+    fn pop_clip_rect(&mut self) {}
+
+    fn draw_image(&mut self, _image: ImageStyle, _rect: Rect) {}
 }

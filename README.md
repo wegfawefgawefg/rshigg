@@ -9,6 +9,7 @@ Rust implementation of ShiGG: a compact, game-oriented GUI library.
 - A larger scrollable panel demo is provided in `full_demo`.
 - A backend extension example is provided in `custom_backend`.
 - All current widgets render through the same backend/theme architecture.
+- GUI-level visibility control is available via `Gui::set_visible(id, bool)`.
 
 ## Run
 
@@ -44,6 +45,7 @@ Runs a non-raylib backend implementation that records draw commands.
 4. Render widgets using:
    - your own backend implementing `DrawBackend`
    - `rshigg::draw_gui(...)` with a `Theme`
+5. Optionally set widget image styles (background, track, thumb) and let the backend decide how to render images.
 
 ## Widgets
 
@@ -100,6 +102,9 @@ pub trait DrawBackend {
     fn fill_rect(&mut self, rect: Rect, color: Color);
     fn draw_line(&mut self, start: Vec2, end: Vec2, color: Color, thickness: f32);
     fn draw_text(&mut self, text: &str, position: Vec2, font_size: f32, color: Color);
+    fn push_clip_rect(&mut self, rect: Rect) { ... }  // optional
+    fn pop_clip_rect(&mut self) { ... }               // optional
+    fn draw_image(&mut self, image: ImageStyle, rect: Rect) { ... } // optional
 }
 ```
 

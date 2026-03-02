@@ -1,5 +1,5 @@
 use glam::Vec2;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     ButtonToggle, Draggable, Label, LeftRightSelector, MoveAndResizeThumbs, VerticalSlider,
@@ -9,6 +9,7 @@ use super::{Button, Slider, TaggedEvent};
 
 pub struct Gui<T: Clone + Copy> {
     pub el_to_tag_map: HashMap<u32, T>,
+    pub hidden_ids: HashSet<u32>,
     pub buttons: Vec<Button>,
     pub sliders: Vec<Slider>,
     pub vertical_sliders: Vec<VerticalSlider>,
@@ -23,6 +24,7 @@ impl<T: Clone + Copy> Gui<T> {
     pub fn new() -> Self {
         Self {
             el_to_tag_map: HashMap::new(),
+            hidden_ids: HashSet::new(),
             buttons: Vec::new(),
             sliders: Vec::new(),
             vertical_sliders: Vec::new(),
@@ -37,35 +39,42 @@ impl<T: Clone + Copy> Gui<T> {
     //// ADD ELEMENTS
     pub fn add_button(&mut self, button: Button, tag: T) {
         self.el_to_tag_map.insert(button.id, tag);
+        self.hidden_ids.remove(&button.id);
         self.buttons.push(button);
     }
 
     pub fn add_slider(&mut self, slider: Slider, tag: T) {
         self.el_to_tag_map.insert(slider.id, tag);
+        self.hidden_ids.remove(&slider.id);
         self.sliders.push(slider);
     }
 
     pub fn add_vertical_slider(&mut self, vertical_slider: VerticalSlider, tag: T) {
         self.el_to_tag_map.insert(vertical_slider.id, tag);
+        self.hidden_ids.remove(&vertical_slider.id);
         self.vertical_sliders.push(vertical_slider);
     }
 
     pub fn add_draggable(&mut self, draggable: Draggable, tag: T) {
         self.el_to_tag_map.insert(draggable.id, tag);
+        self.hidden_ids.remove(&draggable.id);
         self.draggables.push(draggable);
     }
 
     pub fn add_label(&mut self, label: Label) {
+        self.hidden_ids.remove(&label.id);
         self.labels.push(label);
     }
 
     pub fn add_left_right_selector(&mut self, left_right_selector: LeftRightSelector, tag: T) {
         self.el_to_tag_map.insert(left_right_selector.id, tag);
+        self.hidden_ids.remove(&left_right_selector.id);
         self.left_right_selectors.push(left_right_selector);
     }
 
     pub fn add_button_toggle(&mut self, button_toggle: ButtonToggle, tag: T) {
         self.el_to_tag_map.insert(button_toggle.id, tag);
+        self.hidden_ids.remove(&button_toggle.id);
         self.button_toggles.push(button_toggle);
     }
 
@@ -75,49 +84,70 @@ impl<T: Clone + Copy> Gui<T> {
         tag: T,
     ) {
         self.el_to_tag_map.insert(move_and_resize_thumbs.id, tag);
+        self.hidden_ids.remove(&move_and_resize_thumbs.id);
         self.move_and_resize_thumbs.push(move_and_resize_thumbs);
+    }
+
+    pub fn set_visible(&mut self, id: u32, visible: bool) {
+        if visible {
+            self.hidden_ids.remove(&id);
+        } else {
+            self.hidden_ids.insert(id);
+        }
+    }
+
+    pub fn is_visible(&self, id: u32) -> bool {
+        !self.hidden_ids.contains(&id)
     }
 
     //// REMOVE ELEMENTS
     pub fn remove_button(&mut self, id: u32) {
         self.buttons.retain(|button| button.id != id);
         self.el_to_tag_map.remove(&id);
+        self.hidden_ids.remove(&id);
     }
 
     pub fn remove_slider(&mut self, id: u32) {
         self.sliders.retain(|slider| slider.id != id);
         self.el_to_tag_map.remove(&id);
+        self.hidden_ids.remove(&id);
     }
 
     pub fn remove_vertical_slider(&mut self, id: u32) {
         self.vertical_sliders
             .retain(|vertical_slider| vertical_slider.id != id);
         self.el_to_tag_map.remove(&id);
+        self.hidden_ids.remove(&id);
     }
 
     pub fn remove_draggable(&mut self, id: u32) {
         self.draggables.retain(|draggable| draggable.id != id);
         self.el_to_tag_map.remove(&id);
+        self.hidden_ids.remove(&id);
     }
 
     pub fn remove_label(&mut self, id: u32) {
         self.labels.retain(|label| label.id != id);
+        self.hidden_ids.remove(&id);
     }
 
     pub fn remove_left_right_selector(&mut self, id: u32) {
         self.left_right_selectors
             .retain(|selector| selector.id != id);
         self.el_to_tag_map.remove(&id);
+        self.hidden_ids.remove(&id);
     }
 
     pub fn remove_button_toggle(&mut self, id: u32) {
         self.button_toggles.retain(|toggle| toggle.id != id);
         self.el_to_tag_map.remove(&id);
+        self.hidden_ids.remove(&id);
     }
 
     pub fn remove_move_and_resize_thumbs(&mut self, id: u32) {
         self.move_and_resize_thumbs.retain(|thumbs| thumbs.id != id);
         self.el_to_tag_map.remove(&id);
+        self.hidden_ids.remove(&id);
     }
 
     //// GET ELEMENTS
@@ -209,6 +239,9 @@ impl<T: Clone + Copy> Gui<T> {
     pub fn step(&mut self, mouse_position: Vec2, mouse_pressed: bool) -> Vec<TaggedEvent<T>> {
         let mut tagged_events = Vec::new();
         for button in self.buttons.iter_mut() {
+            if self.hidden_ids.contains(&button.id) {
+                continue;
+            }
             if let Some(event) = button.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&button.id) {
                     tagged_events.push(TaggedEvent {
@@ -220,6 +253,9 @@ impl<T: Clone + Copy> Gui<T> {
             }
         }
         for slider in self.sliders.iter_mut() {
+            if self.hidden_ids.contains(&slider.id) {
+                continue;
+            }
             if let Some(event) = slider.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&slider.id) {
                     tagged_events.push(TaggedEvent {
@@ -231,6 +267,9 @@ impl<T: Clone + Copy> Gui<T> {
             }
         }
         for vertical_slider in self.vertical_sliders.iter_mut() {
+            if self.hidden_ids.contains(&vertical_slider.id) {
+                continue;
+            }
             if let Some(event) = vertical_slider.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&vertical_slider.id) {
                     tagged_events.push(TaggedEvent {
@@ -242,6 +281,9 @@ impl<T: Clone + Copy> Gui<T> {
             }
         }
         for draggable in self.draggables.iter_mut() {
+            if self.hidden_ids.contains(&draggable.id) {
+                continue;
+            }
             if let Some(event) = draggable.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&draggable.id) {
                     tagged_events.push(TaggedEvent {
@@ -253,6 +295,9 @@ impl<T: Clone + Copy> Gui<T> {
             }
         }
         for selector in self.left_right_selectors.iter_mut() {
+            if self.hidden_ids.contains(&selector.id) {
+                continue;
+            }
             if let Some(event) = selector.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&selector.id) {
                     tagged_events.push(TaggedEvent {
@@ -264,6 +309,9 @@ impl<T: Clone + Copy> Gui<T> {
             }
         }
         for toggle in self.button_toggles.iter_mut() {
+            if self.hidden_ids.contains(&toggle.id) {
+                continue;
+            }
             if let Some(event) = toggle.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&toggle.id) {
                     tagged_events.push(TaggedEvent {
@@ -275,6 +323,9 @@ impl<T: Clone + Copy> Gui<T> {
             }
         }
         for thumbs in self.move_and_resize_thumbs.iter_mut() {
+            if self.hidden_ids.contains(&thumbs.id) {
+                continue;
+            }
             if let Some(event) = thumbs.step(mouse_position, mouse_pressed) {
                 if let Some(tag) = self.el_to_tag_map.get(&thumbs.id) {
                     tagged_events.push(TaggedEvent {

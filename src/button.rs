@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use super::{common::ELEMENT_NEXT_ID, Event};
+use super::{common::ELEMENT_NEXT_ID, Event, ImageStyle};
 
 use glam::Vec2;
 pub struct Button {
@@ -9,6 +9,7 @@ pub struct Button {
     pub size: Vec2,
 
     pub label: Option<String>,
+    pub background_image: Option<ImageStyle>,
 
     pub hovered: bool,
     pub pressed: bool,
@@ -23,11 +24,16 @@ impl Button {
             size,
 
             label,
+            background_image: None,
 
             hovered: false,
             pressed: false,
             was_pressed: false,
         }
+    }
+
+    pub fn set_background_image(&mut self, image: ImageStyle) {
+        self.background_image = Some(image);
     }
 
     pub fn step(&mut self, mouse_position: Vec2, mouse_pressed: bool) -> Option<Event> {

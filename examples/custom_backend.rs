@@ -1,7 +1,7 @@
 use glam::Vec2;
 use rshigg::{
     transform_mouse_to_normalized_subsurface_coords, Button, ButtonToggle, Color, DrawBackend, Gui,
-    LeftRightSelector, MoveAndResizeThumbs, Rect, Slider, Theme, VerticalSlider,
+    ImageStyle, LeftRightSelector, MoveAndResizeThumbs, Rect, Slider, Theme, VerticalSlider,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -16,28 +16,30 @@ enum Tag {
 
 fn main() {
     let mut gui = Gui::new();
-    gui.add_button(
-        Button::new(
-            Vec2::new(0.05, 0.05),
-            Vec2::new(0.25, 0.15),
-            Some("Mute".to_string()),
-        ),
-        Tag::ToggleMute,
+    let mut mute_button = Button::new(
+        Vec2::new(0.05, 0.05),
+        Vec2::new(0.25, 0.15),
+        Some("Mute".to_string()),
     );
-    gui.add_slider(
-        Slider::new(
-            Vec2::new(0.05, 0.3),
-            Vec2::new(0.9, 0.12),
-            0.04,
-            0.0,
-            100.0,
-            1.0,
-            50.0,
-            0.05,
-            Some("Volume".to_string()),
-        ),
-        Tag::SetVolume,
+    let mut icon = ImageStyle::stretched(1001);
+    icon.draw_over_content = true;
+    mute_button.set_background_image(icon);
+    gui.add_button(mute_button, Tag::ToggleMute);
+
+    let mut volume_slider = Slider::new(
+        Vec2::new(0.05, 0.3),
+        Vec2::new(0.9, 0.12),
+        0.04,
+        0.0,
+        100.0,
+        1.0,
+        50.0,
+        0.05,
+        Some("Volume".to_string()),
     );
+    volume_slider.set_track_image(ImageStyle::tiled(2001));
+    volume_slider.set_thumb_image(ImageStyle::centered(2002));
+    gui.add_slider(volume_slider, Tag::SetVolume);
     gui.add_vertical_slider(
         VerticalSlider::new(
             Vec2::new(0.95, 0.05),
@@ -148,6 +150,34 @@ impl DrawBackend for CommandBufferBackend {
         self.commands.push(format!(
             "draw_text '{text}' at ({:.1},{:.1}) size={:.1} color=({}, {}, {}, {})",
             position.x, position.y, font_size, color.r, color.g, color.b, color.a
+        ));
+    }
+
+    fn push_clip_rect(&mut self, rect: Rect) {
+        self.commands.push(format!(
+            "push_clip_rect pos=({:.1},{:.1}) size=({:.1},{:.1})",
+            rect.position.x, rect.position.y, rect.size.x, rect.size.y
+        ));
+    }
+
+    fn pop_clip_rect(&mut self) {
+        self.commands.push("pop_clip_rect".to_string());
+    }
+
+    fn draw_image(&mut self, image: ImageStyle, rect: Rect) {
+        self.commands.push(format!(
+            "draw_image id={} layout={:?} pos=({:.1},{:.1}) size=({:.1},{:.1}) tint=({}, {}, {}, {}) over={}",
+            image.image_id,
+            image.layout,
+            rect.position.x,
+            rect.position.y,
+            rect.size.x,
+            rect.size.y,
+            image.tint.r,
+            image.tint.g,
+            image.tint.b,
+            image.tint.a,
+            image.draw_over_content,
         ));
     }
 }

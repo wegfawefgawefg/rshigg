@@ -2,7 +2,7 @@ use std::sync::atomic::Ordering;
 
 use glam::Vec2;
 
-use super::{Event, ELEMENT_NEXT_ID};
+use super::{Event, ImageStyle, ELEMENT_NEXT_ID};
 
 pub struct VerticalSlider {
     pub id: u32,
@@ -15,6 +15,8 @@ pub struct VerticalSlider {
     pub snap_sensetivity_fraction: f32,
     pub value: f32,
     pub label: Option<String>,
+    pub track_image: Option<ImageStyle>,
+    pub thumb_image: Option<ImageStyle>,
     pub hovered: bool,
     pub was_pressed: bool,
 }
@@ -43,9 +45,19 @@ impl VerticalSlider {
             snap_sensetivity_fraction,
             value: default_value,
             label,
+            track_image: None,
+            thumb_image: None,
             hovered: false,
             was_pressed: false,
         }
+    }
+
+    pub fn set_track_image(&mut self, image: ImageStyle) {
+        self.track_image = Some(image);
+    }
+
+    pub fn set_thumb_image(&mut self, image: ImageStyle) {
+        self.thumb_image = Some(image);
     }
 
     pub fn step(&mut self, mouse_position: Vec2, mouse_pressed: bool) -> Option<Event> {

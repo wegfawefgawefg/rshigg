@@ -1,6 +1,5 @@
-use std::sync::atomic::AtomicU32;
-
 use glam::Vec2;
+use std::sync::atomic::AtomicU32;
 
 pub static ELEMENT_NEXT_ID: AtomicU32 = AtomicU32::new(0);
 
@@ -39,9 +38,4 @@ pub enum Event {
         target_position: Vec2,
         target_size: Vec2,
     },
-}
-
-pub trait Element {
-    fn get_id(&self) -> u32;
-    fn step(&mut self, mouse_position: Vec2, mouse_pressed: bool) -> Option<Event>;
 }
