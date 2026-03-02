@@ -3,10 +3,13 @@ use rshigg::Event;
 
 #[path = "full_demo/draw.rs"]
 mod draw;
+#[path = "shared/raylib_skin.rs"]
+mod raylib_skin;
 #[path = "full_demo/state.rs"]
 mod state;
 
 use draw::{center_window, draw_scene, scale_and_blit_render_texture_to_window};
+use raylib_skin::SkinTextures;
 use state::{
     handle_main_events, handle_settings_events, layout_settings, DemoState, DIMS, WINDOW_DIMS,
 };
@@ -25,6 +28,7 @@ fn main() {
             println!("Error creating render texture: {}", e);
             std::process::exit(1);
         });
+    let skins = SkinTextures::load(&mut rl, &rlt);
 
     while state.running && !rl.window_should_close() {
         process_input(&mut rl, &mut state);
@@ -34,7 +38,7 @@ fn main() {
         {
             let low_res_d = &mut d.begin_texture_mode(&rlt, &mut render_texture);
             low_res_d.clear_background(Color::new(45, 45, 52, 255));
-            draw_scene(&state, low_res_d);
+            draw_scene(&state, low_res_d, &skins);
         }
         scale_and_blit_render_texture_to_window(&mut d, &mut render_texture);
     }

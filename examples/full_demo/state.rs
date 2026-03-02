@@ -4,6 +4,10 @@ use rshigg::{
     Slider, TaggedEvent, VerticalSlider,
 };
 
+use crate::raylib_skin::{
+    IMG_GOLD_ARROW, IMG_OPTION_BUTTON, IMG_ROW_STRIP, IMG_SLIDER_KNOB, IMG_SLIDER_TRACK,
+};
+
 pub const WINDOW_DIMS: UVec2 = UVec2::new(1280, 720);
 pub const DIMS: UVec2 = WINDOW_DIMS;
 
@@ -60,6 +64,8 @@ impl DemoState {
             Vec2::new(0.14, 0.07),
             Some("Settings".to_string()),
         );
+        let mut open_button = open_button;
+        open_button.set_background_image(rshigg::ImageStyle::stretched(IMG_OPTION_BUTTON));
         let open_settings_button_id = open_button.id;
         main_gui.add_button(open_button, Tag::OpenSettings);
 
@@ -77,6 +83,8 @@ impl DemoState {
             Vec2::new(settings_size.x * 0.88, settings_size.y * 0.08),
             Some("Settings".to_string()),
         );
+        let mut move_window = move_window;
+        move_window.set_background_image(rshigg::ImageStyle::stretched(IMG_ROW_STRIP));
         let move_window_id = move_window.id;
         settings_gui.add_draggable(move_window, Tag::MoveWindow);
 
@@ -85,6 +93,8 @@ impl DemoState {
             Vec2::new(settings_size.x * 0.12, settings_size.y * 0.08),
             Some("X".to_string()),
         );
+        let mut close_window = close_window;
+        close_window.set_background_image(rshigg::ImageStyle::stretched(IMG_OPTION_BUTTON));
         let close_window_id = close_window.id;
         settings_gui.add_button(close_window, Tag::CloseSettings);
 
@@ -99,6 +109,9 @@ impl DemoState {
             0.0,
             Some("Scroll".to_string()),
         );
+        let mut scroll_slider = scroll_slider;
+        scroll_slider.set_track_image(rshigg::ImageStyle::tiled(IMG_SLIDER_TRACK));
+        scroll_slider.set_thumb_image(rshigg::ImageStyle::centered(IMG_SLIDER_KNOB));
         let scroll_slider_id = scroll_slider.id;
         settings_gui.add_vertical_slider(scroll_slider, Tag::ScrollMenu);
 
@@ -106,13 +119,15 @@ impl DemoState {
         let row_count = 36;
         for i in 0..row_count {
             let label = Label::new(Vec2::ZERO, Vec2::ZERO, Some(format!("Option {}", i + 1)));
+            let mut label = label;
+            label.set_background_image(rshigg::ImageStyle::stretched(IMG_ROW_STRIP));
             let label_id = label.id;
             settings_gui.add_label(label);
 
             let control = match i % 4 {
                 0 => {
                     let mut button = Button::new(Vec2::ZERO, Vec2::ZERO, Some("Apply".to_string()));
-                    button.set_background_image(rshigg::ImageStyle::stretched(10_000 + i as u64));
+                    button.set_background_image(rshigg::ImageStyle::stretched(IMG_OPTION_BUTTON));
                     let id = button.id;
                     settings_gui.add_button(button, Tag::RowButton(i));
                     RowControl::Button(id)
@@ -129,8 +144,8 @@ impl DemoState {
                         0.0,
                         Some("Slider".to_string()),
                     );
-                    slider.set_track_image(rshigg::ImageStyle::tiled(20_000 + i as u64));
-                    slider.set_thumb_image(rshigg::ImageStyle::centered(30_000 + i as u64));
+                    slider.set_track_image(rshigg::ImageStyle::tiled(IMG_SLIDER_TRACK));
+                    slider.set_thumb_image(rshigg::ImageStyle::centered(IMG_SLIDER_KNOB));
                     let id = slider.id;
                     settings_gui.add_slider(slider, Tag::RowSlider(i));
                     RowControl::Slider(id)
@@ -150,10 +165,10 @@ impl DemoState {
                     );
                     selector
                         .left_button
-                        .set_background_image(rshigg::ImageStyle::stretched(40_000 + i as u64));
+                        .set_background_image(rshigg::ImageStyle::stretched(IMG_OPTION_BUTTON));
                     selector
                         .right_button
-                        .set_background_image(rshigg::ImageStyle::stretched(50_000 + i as u64));
+                        .set_background_image(rshigg::ImageStyle::stretched(IMG_OPTION_BUTTON));
                     let id = selector.id;
                     settings_gui.add_left_right_selector(selector, Tag::RowSelector(i));
                     RowControl::LeftRightSelector(id)
@@ -168,8 +183,8 @@ impl DemoState {
                     );
                     toggle
                         .left_button
-                        .set_background_image(rshigg::ImageStyle::stretched(60_000 + i as u64));
-                    let mut right_image = rshigg::ImageStyle::stretched(70_000 + i as u64);
+                        .set_background_image(rshigg::ImageStyle::stretched(IMG_OPTION_BUTTON));
+                    let mut right_image = rshigg::ImageStyle::centered(IMG_GOLD_ARROW);
                     right_image.draw_over_content = true;
                     toggle.right_button.set_background_image(right_image);
                     let id = toggle.id;

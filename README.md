@@ -7,7 +7,9 @@ Rust implementation of ShiGG: a compact, game-oriented GUI library.
 - Core widget logic is backend-agnostic.
 - Raylib is used in the `basic` example.
 - A larger scrollable panel demo is provided in `full_demo`.
+- `full_demo` now uses textured image regions for row skins/icons.
 - A backend extension example is provided in `custom_backend`.
+- A stylized RPG-status-inspired image demo is provided in `rpg_status_demo`.
 - All current widgets render through the same backend/theme architecture.
 - GUI-level visibility control is available via `Gui::set_visible(id, bool)`.
 
@@ -32,6 +34,12 @@ cargo run --example full_demo
 Runs the larger settings-panel demo inspired by the original Python project.
 
 ```bash
+cargo run --example rpg_status_demo
+```
+
+Runs a texture-skinned RPG status panel demo inspired by reference menu UIs in `refs/`.
+
+```bash
 cargo run --example custom_backend
 ```
 
@@ -40,7 +48,9 @@ Runs a non-raylib backend implementation that records draw commands.
 ## Core Concepts
 
 1. Build a `Gui<Tag>` and add elements.
-2. Step GUI state with normalized mouse coordinates.
+2. Step GUI state with either:
+   - normalized mouse coordinates via `Gui::step(...)`
+   - pixel mouse coordinates via `Gui::step_pixels(...)`
 3. Handle returned `TaggedEvent<Tag>` values.
 4. Render widgets using:
    - your own backend implementing `DrawBackend`

@@ -236,6 +236,25 @@ impl<T: Clone + Copy> Gui<T> {
     /// Mouse position should ideally be normalized between [0.0, 1.0].
     /// Values outside the range [0.0, 1.0] can be treated as outside the gui rect.
     /// This isnt required but will make things a whole lot easier for you.
+    pub fn step_pixels(
+        &mut self,
+        mouse_position_pixels: Vec2,
+        resolution_pixels: Vec2,
+        mouse_pressed: bool,
+    ) -> Vec<TaggedEvent<T>> {
+        let normalized_mouse = if resolution_pixels.x > 0.0 && resolution_pixels.y > 0.0 {
+            Vec2::new(
+                mouse_position_pixels.x / resolution_pixels.x,
+                mouse_position_pixels.y / resolution_pixels.y,
+            )
+        } else {
+            // Force out-of-bounds if resolution is invalid.
+            Vec2::new(-1.0, -1.0)
+        };
+        self.step(normalized_mouse, mouse_pressed)
+    }
+
+    ///Step using normalized mouse coordinates.
     pub fn step(&mut self, mouse_position: Vec2, mouse_pressed: bool) -> Vec<TaggedEvent<T>> {
         let mut tagged_events = Vec::new();
         for button in self.buttons.iter_mut() {

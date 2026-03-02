@@ -26,14 +26,15 @@ RShiGG is organized into four layers:
 Per frame:
 
 1. Application updates widget positions/sizes/values as needed.
-2. `Gui::step(mouse_pos, mouse_pressed)` advances interaction state and returns `Vec<TaggedEvent<TTag>>`.
+2. `Gui::step(mouse_pos, mouse_pressed)` or `Gui::step_pixels(mouse_px, resolution_px, mouse_pressed)` advances interaction state and returns `Vec<TaggedEvent<TTag>>`.
 3. `draw_gui(gui, backend, resolution, theme)` renders the same GUI through the theme.
 
 This is retained-state UI with immediate-style usage patterns in the app loop.
 
 ## Visibility Model (No Per-Widget Hidden Field)
 
-Visibility lives in `Gui`, not inside each widget type:
+Visibility can live in application flow (`if show_settings { ... }`) or in `Gui` visibility control.  
+When per-element toggling is needed, it lives in `Gui`, not inside each widget type:
 
 - `Gui::set_visible(id, bool)`
 - `Gui::is_visible(id) -> bool`
@@ -41,7 +42,8 @@ Visibility lives in `Gui`, not inside each widget type:
 `Gui` tracks hidden IDs and skips hidden elements during `step`.  
 `draw_gui` also checks `is_visible` and skips rendering hidden elements.
 
-This keeps widget structs lean while still supporting culling/layout control.
+This keeps widget structs lean while still supporting culling/layout control.  
+`set_visible` is a convenience API, not a mandatory pattern.
 
 ## Backend Trait
 
